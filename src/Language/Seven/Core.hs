@@ -1,18 +1,30 @@
-module Language.Seven.Core where
+module Language.Seven.Core
+    ( runInstr
+    , run
+    ) where
+
+import Control.Lens
 
 data Value = Word String
            | Integer Int
   deriving ( Show )
 
 data VM = VM {
-    input :: [Value]
+    pointer :: Int
+  , input :: [Value]
   , output :: [Value]
 } deriving ( Show )
 
-data Instruction = Push Value | Pop
+data Instruction = Push Value | Pop | GoTo Int
 
 mkVM :: [Value] -> VM
-mkVM input = VM { input = input, output = [] }
+mkVM input = VM { pointer = 0
+                , input = input
+                , output = []
+                }
+
+runInstr :: Instruction -> t -> t
+runInstr (Push v) vm = vm
 
 run :: Value -> t -> Instruction
 run (Integer n) vm = Push (Integer n)
