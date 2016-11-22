@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Language.Seven.Core
     ( runInstr
@@ -20,12 +21,16 @@ data VM = VM {
 
 type ProgramError = String
 
-type VMState = Either ProgramError VM
-
-type ProgramState r a = ExceptT ProgramError (State r) a
+type Program = StateT VM IO ()
 
 pushVM :: VM -> Value -> VM
 pushVM vm@(VM _ _ output) x = vm { output = x : output }
+
+push :: MonadState VM m => Value -> m VM
+push v = do
+  vm <- get
+  modify (flip pushVM v)
+  return vm
 
 pop :: State VM (Either String Value)
 pop = state $ \vm ->
