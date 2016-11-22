@@ -16,7 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Language.Seven.Core
-  build-depends:       base >= 4.7 && < 5, lens
+  build-depends:       base >= 4.7 && < 5, lens, mtl
   default-language:    Haskell2010
 
 executable seven-exe
