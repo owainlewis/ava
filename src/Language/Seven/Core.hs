@@ -21,22 +21,20 @@ data VM = VM {
 
 type ProgramError = String
 
-type Program = StateT VM IO ()
-
 pushVM :: VM -> Value -> VM
 pushVM vm@(VM _ _ output) x = vm { output = x : output }
 
-push :: MonadState VM m => Value -> m VM
+push :: Value -> StateT VM IO (Maybe Value)
 push v = do
   vm <- get
   modify (flip pushVM v)
-  return vm
+  return Nothing
 
-pop :: State VM (Either String Value)
-pop = state $ \vm ->
-  case (output vm) of
-    x:xs -> (pure x, vm { output = xs})
-    _ -> (Left "Stack underflow", vm)
+pop :: StateT VM IO (Maybe Value)
+pop = do
+  vm <- get
+  put vm
+  return (Just (Word "OK"))
 
 -- pushPop :: StateT VM Identity (Either String Value)
 -- pushPop = do
