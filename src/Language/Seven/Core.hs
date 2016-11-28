@@ -109,9 +109,7 @@ binOp op = do
     _ -> throwError $ RuntimeException "Expecting two integers"
 
 dot :: VM ()
-dot = do
-  stack <- get
-  liftIO . print . show $ stack
+dot = liftIO . print . show =<< get
 
 swap :: VM ()
 swap = do
