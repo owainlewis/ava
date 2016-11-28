@@ -44,18 +44,10 @@ instance Show ProgramError where
   show StackUnderflowException = "Error: Stack underflow"
   show (RuntimeException e) = e
 
-environment :: [(String, VM ())]
-environment = [ ("+", binOp (+))
-              ]
-
-
 -- | Push an item onto the runtime stack
 --
---   liftIO . print $  "PUSH"
 push :: Value -> VM ()
-push x = do
-    modify f
-    where f (Stack output e) = Stack (x:output) e
+push x = runtime %= (x:)
 
 -- | Pop an item off the stack
 --
@@ -65,7 +57,7 @@ pop = do
   case stack of
     (Stack [] _) -> throwError StackUnderflowException
     s@(Stack (x:xs) _) -> do
-          put $ s { _runtime = xs }
+          runtime .= xs
           return x
 
 peek :: VM (Maybe Value)
@@ -75,11 +67,35 @@ peek = do
     (Stack [] _) ->
         return Nothing
     (Stack (x:xs) _) ->
-        return . pure $ x
+        return $ Just x
 
 noop :: VM ()
 noop = return ()
 
+-- | Run a series of steps on the stack
+--
+-- λ> (run dot (Stack [Number 10] [])) >>= (\_ -> return ()):
+--
+run :: VM a -> Stack -> IO (Either ProgramError a, Stack)
+run f s = runStateT (runExceptT (runVM f)) s
+
+-- | Run a program but throw away the result
+runIO :: Monad m => a -> b -> m ()
+runIO f s = runIO f s >>= (\_ -> return ())
+
+-- | Executes a program p (a list of operations to perform in sequential order)
+--
+eval :: Foldable a => a Value -> Stack -> IO (Either ProgramError (), Stack)
+eval p stack = run (forM_ p eval) stack
+    where eval (Number n) = push $ (Number n)
+          eval (Word w) = symTab w
+
+-- | Works like eval but doesn't require an initial input state
+--
+eval1 :: Foldable a => a Value -> IO (Either ProgramError (), Stack)
+eval1 = flip eval $ Stack [] []
+
+-- STD
 -- | ------------------------------------------------------------------------
 
 -- | Apply a binary operation to two elements on the stack
@@ -92,19 +108,21 @@ binOp op = do
     (Number x1, Number y1) -> push $ Number (x1 `op` y1)
     _ -> throwError $ RuntimeException "Expecting two integers"
 
+dot :: VM ()
+dot = do
+  stack <- get
+  liftIO . print . show $ stack
+
+swap :: VM ()
+swap = do
+  x <- pop
+  y <- pop
+  push y
+  push x
+
 -- | ------------------------------------------------------------------------
 
+symTab :: String -> VM ()
 symTab "+" = binOp (+)
 symTab _ = throwError $ RuntimeException "Unknown word"
-
--- | Run a series of steps on the stack
---
-run :: VM a -> Stack -> IO (Either ProgramError a, Stack)
-run f s = runStateT (runExceptT (runVM f)) s
-
-exec :: Foldable a => a Value -> Stack -> IO (Either ProgramError (), Stack)
-exec program stack = run (forM_ program eval) stack
-    where eval (Number n) = push $ (Number n)
-          eval (Word w) = symTab w
-
 
