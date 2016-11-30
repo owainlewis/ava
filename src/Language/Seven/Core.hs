@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Language.Seven.Core
     ( run
@@ -10,19 +11,10 @@ module Language.Seven.Core
 import Control.Monad.State
 import Control.Monad.Except
 import Control.Lens
-import Data.Monoid((<>))
+import Language.Seven.AST
+import Data.Maybe (fromMaybe)
 
 import qualified Data.Map as M
-
-data Value = Word String
-           | Number Int
-           | Procedure String [Value]
-  deriving ( Eq )
-
-instance Show Value where
-    show (Number n) = show n
-    show (Word w) = show w
-    show (Procedure k v) = "() " <> k <> " -> [...]"
 
 data Stack = Stack {
     -- | The runtime stack that holds the current program state
@@ -50,24 +42,14 @@ instance Show ProgramError where
   show StackUnderflowException = "Error: Stack underflow"
   show (RuntimeException e) = e
 
--- | Push an item onto the runtime stack
---
 push :: Value -> VM ()
 push x = runtime %= (x:)
 
--- | Pop an item off the stack
---
 pop :: VM Value
-pop = do
-  stack <- get
-  case stack of
-    (Stack [] _) -> throwError StackUnderflowException
-    s@(Stack (x:xs) env) -> do
-          runtime .= xs
-          return x
+pop = use runtime >>= \case
+      []     -> throwError StackUnderflowException
+      (x:xs) -> runtime .= xs >> return x
 
--- | Check if a value exists. Do we need this?
---
 peek :: VM (Maybe Value)
 peek = do
     Stack rt _ <- get
@@ -89,8 +71,8 @@ setEnv k v = env %= M.insert k v
 --
 getEnv :: String -> VM (Maybe [Value])
 getEnv k = do
-    Stack _ env <- get
-    return $ M.lookup k env
+    e <- use env
+    return $ M.lookup k e
 
 -- | Run a series of steps on the stack
 --
@@ -106,7 +88,8 @@ runIO f s = runIO f s >>= (\_ -> return ())
 
 -- | Executes a program p (a list of operations to perform in sequential order)
 --
-eval :: Foldable a => a Value -> Stack -> IO (Either ProgramError (), Stack)
+-- eval1 [Procedure ">" [Number 20, Number 20, Word "+"], Word ">"]
+eval :: Foldable f => f Value -> Stack -> IO (Either ProgramError (), Stack)
 eval p stack = run (forM_ p eval) stack
     where eval (Number n) = push $ (Number n)
           eval (Word w) = do
@@ -114,22 +97,19 @@ eval p stack = run (forM_ p eval) stack
                 -- a user has defined the value of a word w to be some procdure p
                 v <- getEnv w
                 case v of
-                    Just procedure -> noop
-                    Nothing ->
-                        -- If the value does not exist then we just try and execute it
-                        symTab w
-          eval (Procedure p instrs) = noop
-              -- If there is a value found then we need to lookup the key
-              -- and if it exists we append the result stack on to the
-              -- input stack (?)
+                    -- If the value exists then evaluate the procedure
+                    Just procedure -> mapM_ eval procedure
+                    -- Else lookup in the symbol table
+                    Nothing -> symTab w
+          -- | Evaluate a procedure by updating the environment
+          eval (Procedure p instrs) = setEnv p instrs
+          symTab "+" = binOp(+)
+          symTab w = throwError $ RuntimeException ("Unbound word " ++ w)
 
 -- | Works like eval but doesn't require an initial input state
 --
 eval1 :: Foldable a => a Value -> IO (Either ProgramError (), Stack)
 eval1 = flip eval $ Stack [] (M.empty)
-
--- STD
--- | ------------------------------------------------------------------------
 
 -- | Apply a binary operation to two elements on the stack
 --
@@ -138,7 +118,8 @@ binOp op = do
   x <- pop
   y <- pop
   case (x,y) of
-    (Number x1, Number y1) -> push $ Number (x1 `op` y1)
+    (Number x1, Number y1) ->
+        push $ Number (x1 `op` y1)
     _ -> throwError $ RuntimeException "Expecting two integers"
 
 debug :: VM ()
@@ -158,9 +139,4 @@ swap = do
   push y
   push x
 
--- | ------------------------------------------------------------------------
-
-symTab :: String -> VM ()
-symTab "+" = binOp (+)
-symTab _ = throwError $ RuntimeException "Unknown word"
 
