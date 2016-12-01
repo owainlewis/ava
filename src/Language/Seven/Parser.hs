@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Language.Seven.Parser
-    ( go
+    ( parseSeven
     , parseAST
     , parseNumber
     , parseWord
@@ -55,3 +55,6 @@ parseAST = many1 . lexeme $ astParser
 
 go :: Parser a -> String -> Either ParseError a
 go p input = parse p ">>" input
+
+parseSeven :: String -> Either ParseError [Value]
+parseSeven input = go parseAST input

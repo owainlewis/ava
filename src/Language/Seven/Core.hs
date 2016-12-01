@@ -14,6 +14,8 @@ import Control.Lens
 import Language.Seven.AST
 import Data.Maybe (fromMaybe)
 
+import Language.Seven.Parser(parseSeven)
+
 import qualified Data.Map as M
 
 data Stack = Stack {
@@ -70,9 +72,7 @@ setEnv k v = env %= M.insert k v
 -- | Extract a value from the environment
 --
 getEnv :: String -> VM (Maybe [Value])
-getEnv k = do
-    e <- use env
-    return $ M.lookup k e
+getEnv k = M.lookup k <$> use env
 
 -- | Run a series of steps on the stack
 --
@@ -89,12 +89,14 @@ runIO f s = runIO f s >>= (\_ -> return ())
 -- | Executes a program p (a list of operations to perform in sequential order)
 --
 -- eval1 [Procedure ">" [Number 20, Number 20, Word "+"], Word ">"]
-eval :: Foldable f => f Value -> Stack -> IO (Either ProgramError (), Stack)
+eval :: [Value] ->
+        Stack ->
+        IO (Either ProgramError (), Stack)
 eval p stack = run (forM_ p eval) stack
     where eval (Number n) = push $ (Number n)
           eval (Word w) = do
                 -- First we need to check in the current vm env to see if
-                -- a user has defined the value of a word w to be some procdure p
+                -- a user has defined the value of a word w to be some procedure p
                 v <- getEnv w
                 case v of
                     -- If the value exists then evaluate the procedure
@@ -103,23 +105,29 @@ eval p stack = run (forM_ p eval) stack
                     Nothing -> symTab w
           -- | Evaluate a procedure by updating the environment
           eval (Procedure p instrs) = setEnv p instrs
+
           symTab "+" = binOp(+)
+          symTab "-" = binOp(-)
+          symTab "*" = binOp(*)
+          symTab "dot" = dot
+          symTab "swap" = swap
           symTab w = throwError $ RuntimeException ("Unbound word " ++ w)
 
 -- | Works like eval but doesn't require an initial input state
 --
-eval1 :: Foldable a => a Value -> IO (Either ProgramError (), Stack)
+eval1 :: [Value] -> IO (Either ProgramError (), Stack)
 eval1 = flip eval $ Stack [] (M.empty)
 
 -- | Apply a binary operation to two elements on the stack
 --
-binOp :: (Int -> Int -> Int) -> VM ()
+binOp :: (Int ->
+          Int ->
+          Int) -> VM ()
 binOp op = do
   x <- pop
   y <- pop
   case (x,y) of
-    (Number x1, Number y1) ->
-        push $ Number (x1 `op` y1)
+    (Number x1, Number y1) -> push $ Number (x1 `op` y1)
     _ -> throwError $ RuntimeException "Expecting two integers"
 
 debug :: VM ()
@@ -127,7 +135,7 @@ debug = get >>= liftIO . print . show
 
 dot :: VM ()
 dot = do
-    Stack xs _ <- get
+    xs <- use runtime
     case xs of
       (x:xs) -> liftIO . print . show $ x
       [] -> throwError $ RuntimeException "Empty stack"
@@ -136,5 +144,10 @@ swap :: VM ()
 swap = do
   x <- pop
   y <- pop
-  push y
   push x
+  push y
+
+exec :: String -> IO ()
+exec program = case (parseSeven program) of
+    Right p -> eval1 p >>= (\_ -> return ())
+    Left e  -> return ()
