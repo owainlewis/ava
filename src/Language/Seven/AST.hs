@@ -1,6 +1,4 @@
-module Language.Seven.AST
-  ( Value(..)
-  ) where
+module Language.Seven.AST where
 
 import Data.Monoid((<>))
 

@@ -138,5 +138,3 @@ swap = do
   y <- pop
   push y
   push x
-
-
