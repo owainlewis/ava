@@ -2,10 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Language.Seven.Core
-    ( run
-    , push
-    , pop
-    , peek
+    ( eval
     ) where
 
 import Control.Monad.State
@@ -89,22 +86,22 @@ runIO f s = runIO f s >>= (\_ -> return ())
 -- | Executes a program p (a list of operations to perform in sequential order)
 --
 -- eval1 [Procedure ">" [Number 20, Number 20, Word "+"], Word ">"]
-eval :: [Value] ->
+evalS :: [Value] ->
         Stack ->
         IO (Either ProgramError (), Stack)
-eval p stack = run (forM_ p eval) stack
-    where eval (Number n) = push $ (Number n)
-          eval (Word w) = do
+evalS p stack = run (forM_ p evaluate) stack
+    where evaluate (Number n) = push $ (Number n)
+          evaluate (Word w) = do
                 -- First we need to check in the current vm env to see if
                 -- a user has defined the value of a word w to be some procedure p
                 v <- getEnv w
                 case v of
                     -- If the value exists then evaluate the procedure
-                    Just procedure -> mapM_ eval procedure
+                    Just procedure -> mapM_ evaluate procedure
                     -- Else lookup in the symbol table
                     Nothing -> symTab w
           -- | Evaluate a procedure by updating the environment
-          eval (Procedure p instrs) = setEnv p instrs
+          evaluate (Procedure p instrs) = setEnv p instrs
 
           symTab "+" = binOp(+)
           symTab "-" = binOp(-)
@@ -115,8 +112,8 @@ eval p stack = run (forM_ p eval) stack
 
 -- | Works like eval but doesn't require an initial input state
 --
-eval1 :: [Value] -> IO (Either ProgramError (), Stack)
-eval1 = flip eval $ Stack [] (M.empty)
+eval :: [Value] -> IO (Either ProgramError (), Stack)
+eval = flip evalS $ Stack [] (M.empty)
 
 -- | Apply a binary operation to two elements on the stack
 --
@@ -146,8 +143,3 @@ swap = do
   y <- pop
   push x
   push y
-
-exec :: String -> IO ()
-exec program = case (parseSeven program) of
-    Right p -> eval1 p >>= (\_ -> return ())
-    Left e  -> return ()

@@ -1,4 +1,14 @@
-module Main where
+module Main ( main) where
+
+import Language.Seven.Core as S
+import Language.Seven.Parser(parseSeven)
 
 main :: IO ()
-main = putStrLn "OK"
+main = do
+  contents <- readFile "program.seven"
+  case (parseSeven contents) of
+      Right program -> do
+        putStrLn . show $ program
+        S.eval program >> return ()
+      Left err -> putStrLn "Failed to parse program"
+  return ()

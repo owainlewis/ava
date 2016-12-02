@@ -27,31 +27,34 @@ integer = read <$> (positiveInteger <|> negativeInteger <|> integer)
 lexeme :: Parser a -> Parser a
 lexeme p = spaces *> p <* spaces
 
+symbol :: Parser Char
+symbol = oneOf "+-*"
+
 parseNumber :: Parser Value
 parseNumber = Number <$> integer
 
--- proc double (-- add numbers to the stack --) =>
+-- fn double (-- add numbers to the stack --) =>
 --   swap dup cons
 --   flip reverse @@>
--- end
+-- ;
 parseProcedure :: Parser Value
 parseProcedure = do
-      string "proc"
-      spaces
+      string "@" <* spaces
       p <- many1 alphaNum
       lexeme $ string "=>"
-      body <- many1 $ parseNumber <|> parseWord
-      spaces *> string "end"
+      body <- parseAST
+      spaces *> string ";"
       return $ Procedure p body
 
--- | Parse a word. For now use alphanum but needs to support more chars
---
 parseWord :: Parser Value
-parseWord = Word <$> many1 alphaNum
+parseWord = Word <$> many1 (symbol <|> alphaNum)
 
 parseAST :: Parser [Value]
 parseAST = many1 . lexeme $ astParser
-    where astParser = parseNumber <|> parseWord
+    where astParser =
+                parseProcedure
+            <|> parseNumber
+            <|> parseWord
 
 go :: Parser a -> String -> Either ParseError a
 go p input = parse p ">>" input
