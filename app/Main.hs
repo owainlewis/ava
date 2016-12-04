@@ -10,5 +10,5 @@ main = do
       Right program -> do
         putStrLn . show $ program
         S.eval program >> return ()
-      Left err -> putStrLn "Failed to parse program"
+      Left err -> putStrLn ("Failed to parse program" ++ show err)
   return ()

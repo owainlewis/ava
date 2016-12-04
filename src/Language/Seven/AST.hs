@@ -2,7 +2,6 @@ module Language.Seven.AST where
 
 import Data.Monoid((<>))
 
-
 data Value = Word String
            | Number Int
            | Procedure String [Value]

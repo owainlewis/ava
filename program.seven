@@ -1,7 +1,5 @@
-@ foo =>
+fn double : (a b -> b a) {
   2 *
-;
+}
 
-10 foo dot
-
-
+10 double dot

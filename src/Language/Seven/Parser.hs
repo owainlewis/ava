@@ -33,17 +33,24 @@ symbol = oneOf "+-*"
 parseNumber :: Parser Value
 parseNumber = Number <$> integer
 
--- fn double (-- add numbers to the stack --) =>
+-- | Lifts a parser of a to a parser for { a }
+--
+braces :: Parser a -> Parser a
+braces p = lexchar '{' *> p <* lexchar '}'
+    where lexchar = lexeme . char
+
+-- | Defines a parser for functions
+--
+-- Example
+--
+-- fn double (-- add numbers to the stack --) {
 --   swap dup cons
---   flip reverse @@>
--- ;
+-- }
 parseProcedure :: Parser Value
 parseProcedure = do
-      string "@" <* spaces
+      string "fn" <* spaces
       p <- many1 alphaNum
-      lexeme $ string "=>"
-      body <- parseAST
-      spaces *> string ";"
+      body <- braces $ parseAST
       return $ Procedure p body
 
 parseWord :: Parser Value
@@ -52,7 +59,7 @@ parseWord = Word <$> many1 (symbol <|> alphaNum)
 parseAST :: Parser [Value]
 parseAST = many1 . lexeme $ astParser
     where astParser =
-                parseProcedure
+                try parseProcedure
             <|> parseNumber
             <|> parseWord
 
