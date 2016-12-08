@@ -65,12 +65,19 @@ parseProcedure = do
 parseWord :: Parser Value
 parseWord = Word <$> many1 (symbol <|> alphaNum)
 
+parseComment :: Parser Value
+parseComment = do
+  char '#'
+  comment <- many $ noneOf "\n"
+  return $ Comment comment
+
 parseAST :: Parser [Value]
 parseAST = many . lexeme $ astParser
     where astParser =
                 parseProcedure
             <|> parseNumber
             <|> parseWord
+            <|> parseComment
 
 go :: Parser a -> String -> Either ParseError a
 go p input = parse p ">>" input

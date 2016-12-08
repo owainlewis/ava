@@ -115,6 +115,7 @@ evalS :: [Value] ->
         IO (Either ProgramError (), Stack)
 evalS p stack = run (forM_ p evaluate) stack
     where evaluate (Number n) = push $ (Number n)
+          evaluate (Comment _) = noop
           evaluate (Word w) = do
                 -- First we need to check in the current vm env to see if
                 -- a user has defined the value of a word w to be some procedure p
@@ -143,6 +144,7 @@ symTab = M.fromList [ ("+", binOp (+))
                     , ("-", binOp (-))
                     , ("*", binOp (*))
                     , ("print", printTop)
+                    , ("swap", swap)
                     ]
 -- | Apply a binary operation to two elements on the stack
 --

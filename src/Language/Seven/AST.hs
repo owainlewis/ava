@@ -8,6 +8,7 @@ data Value = Word String
            | String String
            | Variable String Value
            | Procedure String [Value]
+           | Comment String
   deriving ( Eq, Show )
 
 -- instance Show Value where
