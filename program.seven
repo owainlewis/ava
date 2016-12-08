@@ -1,5 +1,5 @@
-fn double : (a b -> b a) {
+@define double (x -> x) {
   2 *
 }
 
-10 double dot
+10 20 double print

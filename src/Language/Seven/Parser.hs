@@ -33,11 +33,19 @@ symbol = oneOf "+-*"
 parseNumber :: Parser Value
 parseNumber = Number <$> integer
 
+-- | Generalized parser for wrapped structures like sexps etc
+--
+wrapped :: Char -> Parser a -> Char -> Parser a
+wrapped l p r = let lexchar = lexeme . char in
+                lexchar l *> p <* lexchar r
+
 -- | Lifts a parser of a to a parser for { a }
 --
 braces :: Parser a -> Parser a
-braces p = lexchar '{' *> p <* lexchar '}'
-    where lexchar = lexeme . char
+braces p = wrapped '{' p '}'
+
+parens :: Parser a -> Parser a
+parens p = wrapped '(' p ')'
 
 -- | Defines a parser for functions
 --
@@ -48,8 +56,9 @@ braces p = lexchar '{' *> p <* lexchar '}'
 -- }
 parseProcedure :: Parser Value
 parseProcedure = do
-      string "fn" <* spaces
+      string "@define" <* spaces
       p <- many1 alphaNum
+      lexeme $ parens (many $ noneOf ")")
       body <- braces $ parseAST
       return $ Procedure p body
 
@@ -57,9 +66,9 @@ parseWord :: Parser Value
 parseWord = Word <$> many1 (symbol <|> alphaNum)
 
 parseAST :: Parser [Value]
-parseAST = many1 . lexeme $ astParser
+parseAST = many . lexeme $ astParser
     where astParser =
-                try parseProcedure
+                parseProcedure
             <|> parseNumber
             <|> parseWord
 

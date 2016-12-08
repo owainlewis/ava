@@ -4,6 +4,9 @@ import Data.Monoid((<>))
 
 data Value = Word String
            | Number Int
+           | List [Value]
+           | String String
+           | Variable String Value
            | Procedure String [Value]
   deriving ( Eq, Show )
 

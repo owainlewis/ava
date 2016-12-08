@@ -2,23 +2,41 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Language.Seven.Core
-    ( eval
-    ) where
+  ( VM
+  , Stack
+  , ProgramError(..)
+  -- Stack operations
+  , raise
+  , push
+  , pop
+  , peek
+  , noop
+  -- Environment
+  , getEnv
+  , setEnv
+  -- Execution
+  , run
+  , runIO
+  -- Evaluation
+  , eval
+  , evalS
+  ) where
 
 import Control.Monad.State
 import Control.Monad.Except
 import Control.Lens
-import Language.Seven.AST
 import Data.Maybe (fromMaybe)
 
+import Language.Seven.AST
 import Language.Seven.Parser(parseSeven)
+import Data.Monoid((<>))
 
 import qualified Data.Map as M
 
 data Stack = Stack {
     -- | The runtime stack that holds the current program state
     _runtime :: [Value]
-    -- | The global environment used to storage user defined procs
+    -- | The global environment used to storage user defined procedures
   , _env :: M.Map String [Value]
 } deriving ( Eq, Show )
 
@@ -40,6 +58,12 @@ data ProgramError =
 instance Show ProgramError where
   show StackUnderflowException = "Error: Stack underflow"
   show (RuntimeException e) = e
+
+raise :: ProgramError -> VM ()
+raise err = do
+  liftIO (print "*** Runtime Error: Seven ***")
+  liftIO (print . show $ err)
+  throwError err
 
 push :: Value -> VM ()
 push x = runtime %= (x:)
@@ -99,43 +123,43 @@ evalS p stack = run (forM_ p evaluate) stack
                     -- If the value exists then evaluate the procedure
                     Just procedure -> mapM_ evaluate procedure
                     -- Else lookup in the symbol table
-                    Nothing -> symTab w
+                    Nothing ->
+                        case (M.lookup w symTab) of
+                            Just procedure -> procedure
+                            Nothing -> raise $ RuntimeException ("Unbound word " <> w)
           -- | Evaluate a procedure by updating the environment
           evaluate (Procedure p instrs) = setEnv p instrs
-
-          symTab "+" = binOp(+)
-          symTab "-" = binOp(-)
-          symTab "*" = binOp(*)
-          symTab "dot" = dot
-          symTab "swap" = swap
-          symTab w = throwError $ RuntimeException ("Unbound word " ++ w)
 
 -- | Works like eval but doesn't require an initial input state
 --
 eval :: [Value] -> IO (Either ProgramError (), Stack)
 eval = flip evalS $ Stack [] (M.empty)
 
+-- | Standard Library
+-- ----------------------------------------------------------
+
+symTab :: M.Map String (VM ())
+symTab = M.fromList [ ("+", binOp (+))
+                    , ("-", binOp (-))
+                    , ("*", binOp (*))
+                    , ("print", printTop)
+                    ]
 -- | Apply a binary operation to two elements on the stack
 --
-binOp :: (Int ->
-          Int ->
-          Int) -> VM ()
+binOp :: (Int -> Int -> Int) -> VM ()
 binOp op = do
   x <- pop
   y <- pop
   case (x,y) of
     (Number x1, Number y1) -> push $ Number (x1 `op` y1)
-    _ -> throwError $ RuntimeException "Expecting two integers"
+    _ -> raise $ RuntimeException "Expecting two integers"
 
-debug :: VM ()
-debug = get >>= liftIO . print . show
-
-dot :: VM ()
-dot = do
+printTop :: VM ()
+printTop = do
     xs <- use runtime
     case xs of
       (x:xs) -> liftIO . print . show $ x
-      [] -> throwError $ RuntimeException "Empty stack"
+      [] -> liftIO . print $ "()"
 
 swap :: VM ()
 swap = do
