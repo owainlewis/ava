@@ -6,6 +6,7 @@ data Value = Word String
            | Number Int
            | List [Value]
            | String String
+           | Boolean Bool
            | Variable String Value
            | Procedure String [Value]
            | Comment String

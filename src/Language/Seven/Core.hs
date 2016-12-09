@@ -2,8 +2,8 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Language.Seven.Core
-  ( VM
-  , Stack
+  ( VM(..)
+  , Stack(..)
   , ProgramError(..)
   -- Stack operations
   , raise
@@ -110,9 +110,7 @@ runIO f s = runIO f s >>= (\_ -> return ())
 -- | Executes a program p (a list of operations to perform in sequential order)
 --
 -- eval1 [Procedure ">" [Number 20, Number 20, Word "+"], Word ">"]
-evalS :: [Value] ->
-        Stack ->
-        IO (Either ProgramError (), Stack)
+evalS :: [Value] -> Stack -> IO (Either ProgramError (), Stack)
 evalS p stack = run (forM_ p evaluate) stack
     where evaluate (Number n) = push $ (Number n)
           evaluate (Comment _) = noop

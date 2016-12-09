@@ -33,6 +33,12 @@ symbol = oneOf "+-*"
 parseNumber :: Parser Value
 parseNumber = Number <$> integer
 
+parseBoolean :: Parser Value
+parseBoolean = parseTrue <|> parseFalse
+    where parseFalse = ulift (Boolean False) <$> string "false"
+          parseTrue  = ulift (Boolean True) <$> string "true"
+          ulift v = (\_ -> v)
+
 -- | Generalized parser for wrapped structures like sexps etc
 --
 wrapped :: Char -> Parser a -> Char -> Parser a
