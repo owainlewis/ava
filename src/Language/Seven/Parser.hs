@@ -6,9 +6,9 @@ module Language.Seven.Parser
     , parseWord
     ) where
 
-import Language.Seven.AST
-import Text.Parsec
-import Text.Parsec.String(Parser)
+import           Language.Seven.AST
+import           Text.Parsec
+import           Text.Parsec.String (Parser)
 
 float :: Parser Float
 float = fmap read $ (many1 digit) <++> decimal

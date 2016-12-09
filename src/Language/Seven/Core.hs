@@ -1,6 +1,6 @@
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE TemplateHaskell            #-}
 module Language.Seven.Core
   ( VM(..)
   , Stack(..)
@@ -22,23 +22,26 @@ module Language.Seven.Core
   , evalS
   ) where
 
-import Control.Monad.State
-import Control.Monad.Except
-import Control.Lens
-import Data.Maybe (fromMaybe)
+import           Control.Lens
+import           Control.Monad.Except
+import           Control.Monad.State
+import           Data.Maybe            (fromMaybe)
 
-import Language.Seven.AST
-import Language.Seven.Parser(parseSeven)
-import Data.Monoid((<>))
+import           Data.Monoid           ((<>))
+import           Language.Seven.AST
+import           Language.Seven.Parser (parseSeven)
 
-import qualified Data.Map as M
+import qualified Data.Map              as M
 
 data Stack = Stack {
     -- | The runtime stack that holds the current program state
     _runtime :: [Value]
     -- | The global environment used to storage user defined procedures
-  , _env :: M.Map String [Value]
-} deriving ( Eq, Show )
+  , _env     :: M.Map String [Value]
+} deriving ( Eq )
+
+instance Show Stack where
+  show (Stack xs _) = show xs
 
 makeLenses ''Stack
 
@@ -57,7 +60,7 @@ data ProgramError =
 
 instance Show ProgramError where
   show StackUnderflowException = "Error: Stack underflow"
-  show (RuntimeException e) = e
+  show (RuntimeException e)    = e
 
 raise :: ProgramError -> VM ()
 raise err = do
@@ -143,6 +146,7 @@ symTab = M.fromList [ ("+", binOp (+))
                     , ("*", binOp (*))
                     , ("print", printTop)
                     , ("swap", swap)
+                    , ("debug", debug)
                     ]
 -- | Apply a binary operation to two elements on the stack
 --
@@ -158,8 +162,8 @@ printTop :: VM ()
 printTop = do
     xs <- use runtime
     case xs of
-      (x:xs) -> liftIO . print . show $ x
-      [] -> liftIO . print $ "()"
+      (x:xs) -> liftIO $ print x
+      []     -> liftIO $ print "()"
 
 swap :: VM ()
 swap = do
@@ -167,3 +171,10 @@ swap = do
   y <- pop
   push x
   push y
+
+debug :: VM ()
+debug = do
+  stack <- get
+  liftIO $ print stack
+
+
