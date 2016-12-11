@@ -6,8 +6,5 @@
   2 *
 }
 
-10 20 double
+[1, 2, 3] debug
 
-swap print
-
-40 50 double print swap print

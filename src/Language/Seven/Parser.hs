@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 module Language.Seven.Parser
     ( parseSeven
@@ -9,6 +10,10 @@ module Language.Seven.Parser
 import           Language.Seven.AST
 import           Text.Parsec
 import           Text.Parsec.String (Parser)
+
+alpha :: Parser String
+alpha = many (oneOf chars)
+    where chars = ['a'..'z'] ++ ['A'..'Z']
 
 float :: Parser Float
 float = fmap read $ (many1 digit) <++> decimal
@@ -53,6 +58,13 @@ braces p = wrapped '{' p '}'
 parens :: Parser a -> Parser a
 parens p = wrapped '(' p ')'
 
+parseList :: Parser Value
+parseList = do
+  char '['
+  body <- sepBy parseValue (spaces *> string "," <* spaces)
+  char ']'
+  return (FList body)
+
 -- | Defines a parser for functions
 --
 -- Example
@@ -77,13 +89,16 @@ parseComment = do
   comment <- many $ noneOf "\n"
   return $ Comment comment
 
+parseValue :: Parser Value
+parseValue =
+        parseProcedure
+    <|> parseList
+    <|> parseNumber
+    <|> parseWord
+    <|> parseComment
+
 parseAST :: Parser [Value]
-parseAST = many . lexeme $ astParser
-    where astParser =
-                parseProcedure
-            <|> parseNumber
-            <|> parseWord
-            <|> parseComment
+parseAST = many . lexeme $ parseValue
 
 go :: Parser a -> String -> Either ParseError a
 go p input = parse p ">>" input

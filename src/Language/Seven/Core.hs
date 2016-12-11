@@ -25,13 +25,13 @@ module Language.Seven.Core
 import           Control.Lens
 import           Control.Monad.Except
 import           Control.Monad.State
-import           Data.Maybe            (fromMaybe)
+import           Data.Maybe               (fromMaybe)
 
-import           Data.Monoid           ((<>))
+import           Data.Monoid              ((<>))
 import           Language.Seven.AST
-import           Language.Seven.Parser (parseSeven)
+import           Language.Seven.Parser    (parseSeven)
 
-import qualified Data.Map              as M
+import qualified Data.Map                 as M
 
 data Stack = Stack {
     -- | The runtime stack that holds the current program state
@@ -57,16 +57,35 @@ newtype VM a = VM { runVM :: ExceptT ProgramError (StateT Stack IO) a }
 data ProgramError =
       StackUnderflowException
     | RuntimeException String
+    | TypeError String
 
 instance Show ProgramError where
-  show StackUnderflowException = "Error: Stack underflow"
+  show StackUnderflowException = "Stack underflow"
   show (RuntimeException e)    = e
+  show (TypeError e) = e
+  -- show (TypeError actual expected) = concat ["TypeError: Found: "
+  --                                           , actual
+  --                                           , "expecting"
+  --                                           , expected
+  --                                           ]
 
 raise :: ProgramError -> VM ()
 raise err = do
   liftIO (print "*** Runtime Error: Seven ***")
   liftIO (print . show $ err)
   throwError err
+
+withArity :: Int -> VM ()
+withArity n = do
+    xs <- use runtime
+    if (length xs < n)
+      then raise $ RuntimeException (concat [
+              "Expecting at least "
+            , show n
+            , " elements on the stack but found only "
+            , show $ length xs
+            ])
+      else return ()
 
 push :: Value -> VM ()
 push x = runtime %= (x:)
@@ -80,16 +99,14 @@ peek :: VM (Maybe Value)
 peek = do
     Stack rt _ <- get
     case rt of
-        [] ->
-            return Nothing
-        (x:xs) ->
-            return $ Just x
+        []     -> return Nothing
+        (x:xs) -> return $ Just x
 
 noop :: VM ()
 noop = return ()
 
 -- | Insert a sequence of operations into the current VM env
---
+--Ce
 setEnv :: String -> [Value] -> VM ()
 setEnv k v = env %= M.insert k v
 
@@ -115,7 +132,8 @@ runIO f s = runIO f s >>= (\_ -> return ())
 -- eval1 [Procedure ">" [Number 20, Number 20, Word "+"], Word ">"]
 evalS :: [Value] -> Stack -> IO (Either ProgramError (), Stack)
 evalS p stack = run (forM_ p evaluate) stack
-    where evaluate (Number n) = push $ (Number n)
+    where evaluate (Number n) = push $ Number n
+          evaluate (FList xs) = push $ FList xs
           evaluate (Comment _) = noop
           evaluate (Word w) = do
                 -- First we need to check in the current vm env to see if
@@ -135,8 +153,8 @@ evalS p stack = run (forM_ p evaluate) stack
 -- | Works like eval but doesn't require an initial input state
 --
 eval :: [Value] -> IO (Either ProgramError (), Stack)
-eval = flip evalS $ Stack [] (M.empty)
 
+eval = flip evalS $ Stack [] (M.empty)
 -- | Standard Library
 -- ----------------------------------------------------------
 
@@ -147,11 +165,17 @@ symTab = M.fromList [ ("+", binOp (+))
                     , ("print", printTop)
                     , ("swap", swap)
                     , ("debug", debug)
+                    , ("inc", increment)
+                    , ("kill", kill)
+                    , ("xkill", xkill)
+                    , ("cons", fcons)
                     ]
+
 -- | Apply a binary operation to two elements on the stack
 --
 binOp :: (Int -> Int -> Int) -> VM ()
 binOp op = do
+  withArity 2
   x <- pop
   y <- pop
   case (x,y) of
@@ -167,6 +191,7 @@ printTop = do
 
 swap :: VM ()
 swap = do
+  withArity 2
   x <- pop
   y <- pop
   push x
@@ -175,6 +200,35 @@ swap = do
 debug :: VM ()
 debug = do
   stack <- get
-  liftIO $ print stack
+  liftIO (putStrLn . show $ stack)
 
+kill :: VM ()
+kill = do
+    xs <- use runtime
+    case xs of
+      (x:xs) -> runtime .= xs >> return ()
+      []     -> return ()
+
+xkill :: VM ()
+xkill = do
+    xs <- use runtime
+    case xs of
+        ((Number n):xs) -> runtime .= drop n xs >> return ()
+        _               -> raise $ TypeError "Expecting integer"
+
+increment :: VM ()
+increment = do
+    xs <- use runtime
+    case xs of
+      ((Number n):xs) -> runtime .= ((Number $ n+1):xs)
+      _ -> raise $ TypeError "Expecting numeric argument"
+
+fcons :: VM ()
+fcons = do
+  xs <- use runtime
+  case xs of
+      (x:(FList ys):xs) -> runtime .= (FList $ x : ys):xs
+      _ -> raise $ TypeError "Cons requires a list"
+
+-- List operations
 
