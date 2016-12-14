@@ -4,15 +4,26 @@ import           Data.Monoid ((<>))
 
 data Value = Word String
            | Number Int
-           | FList [Value]
+           | Vector [Value]
            | String String
            | Boolean Bool
            | Variable String Value
            | Procedure String [Value]
            | Comment String
-  deriving ( Eq
-           , Show
-           )
+  deriving ( Show )
+
+instance Eq Value where
+  (Word x)    == (Word y)    = x == y
+  (Number x)  == (Number y)  = x == y
+  (String x)  == (String y)  = x == y
+  (Boolean x) == (Boolean y) = x == y
+  (Vector xs) == (Vector ys) = xs == ys
+  (Procedure x1 y1) ==
+    (Procedure x2 y2) = x1 == x2 && y1 == y2
+
+instance Ord Value where
+  (Word x) `compare` (Word y) = x `compare` y
+  (Number x) `compare` (Number y) = x `compare` y
 
 isWord :: Value -> Bool
 isWord (Word _) = True
@@ -22,9 +33,9 @@ isNumber :: Value -> Bool
 isNumber (Number _) = True
 isNumber _ = False
 
-isList :: Value -> Bool
-isList (FList _) = True
-isList _ = False
+isVector :: Value -> Bool
+isVector (Vector _) = True
+isVector _ = False
 
 isString :: Value -> Bool
 isString (String _) = True
@@ -41,9 +52,3 @@ isVariable _ = False
 isProc :: Value -> Bool
 isProc (Procedure _ _) = True
 isProc _ = False
-
--- instance Show Value where
---     show (Number n) = show n
---     show (Word w) = show w
---     show (FList xs) = 
---     show (Procedure k v) = "() " <> k <> " -> [...]"

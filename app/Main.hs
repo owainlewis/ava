@@ -3,11 +3,12 @@ module Main
   , repl
   ) where
 
-import qualified Data.Map              as M
-import           Language.Seven.AST    (Value (..))
-import           Language.Seven.Core   (Stack (..), eval, evalS)
-import           Language.Seven.Parser (parseSeven)
-import           System.IO             (hFlush, stdout)
+import qualified Data.Map               as M
+import           Language.Seven.AST
+import qualified Language.Seven.Eval    as Eval
+import qualified Language.Seven.Machine as Machine
+import qualified Language.Seven.Parser  as Parser
+import           System.IO              (hFlush, stdout)
 
 -- | Run a (R)ead (E)val (P)rint (L)oop top level starting with an empty state
 --
@@ -20,10 +21,10 @@ repl =
               ] in
   do
     mapM_ putStrLn intro
-    runRepl (Stack [] (M.empty))
+    runRepl (Machine.Stack [] (M.empty))
 
 -- | Run the REPL loop providing the current state of the world
-runRepl :: Stack ->  IO ()
+runRepl :: Machine.Stack ->  IO ()
 runRepl stackState = do
     putStr "REPL> "
     hFlush stdout
@@ -32,12 +33,12 @@ runRepl stackState = do
     if ln == "exit()"
       then return ()
       else
-        case (parseSeven ln) of
+        case (Parser.parseSeven ln) of
             Left e -> do
                 putStrLn . show $ e
                 runRepl stackState
             Right result -> do
-                (outcome, stack) <- evalS result stackState
+                (outcome, stack) <- Eval.evalS result stackState
                 runRepl stack
                 return ()
 
@@ -46,9 +47,9 @@ runRepl stackState = do
 runProgram :: IO ()
 runProgram = do
   contents <- readFile "program.seven"
-  case (parseSeven contents) of
+  case (Parser.parseSeven contents) of
       Right program ->
-          eval program >> return ()
+          Eval.eval program >> return ()
       Left err ->
           putStrLn ("Failed to parse program" ++ show err)
   return ()

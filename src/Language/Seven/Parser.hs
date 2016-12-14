@@ -1,10 +1,8 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
 module Language.Seven.Parser
     ( parseSeven
     , parseAST
-    , parseNumber
-    , parseWord
     ) where
 
 import           Language.Seven.AST
@@ -23,7 +21,7 @@ float = fmap read $ (many1 digit) <++> decimal
       (<:>) a b = (:) <$> a <*> b
 
 integer :: Parser Int
-integer = read <$> (positiveInteger <|> negativeInteger <|> integer)
+integer = read <$> (try positiveInteger <|> try negativeInteger <|> integer)
     where integer = many1 digit
           positiveInteger = char '+' *> integer
           negativeInteger = char '-' <:> integer
@@ -40,8 +38,8 @@ parseNumber = Number <$> integer
 
 parseBoolean :: Parser Value
 parseBoolean = parseTrue <|> parseFalse
-    where parseFalse = ulift (Boolean False) <$> string "false"
-          parseTrue  = ulift (Boolean True) <$> string "true"
+    where parseFalse = ulift (Boolean False) <$> string "False"
+          parseTrue  = ulift (Boolean True) <$> string "True"
           ulift v = (\_ -> v)
 
 -- | Generalized parser for wrapped structures like sexps etc
@@ -58,12 +56,12 @@ braces p = wrapped '{' p '}'
 parens :: Parser a -> Parser a
 parens p = wrapped '(' p ')'
 
-parseList :: Parser Value
-parseList = do
+parseVector :: Parser Value
+parseVector = do
   char '['
   body <- sepBy parseValue (spaces *> string "," <* spaces)
   char ']'
-  return (FList body)
+  return (Vector body)
 
 -- | Defines a parser for functions
 --
@@ -89,19 +87,24 @@ parseComment = do
   comment <- many $ noneOf "\n"
   return $ Comment comment
 
+parseString :: Parser Value
+parseString = String <$> wrapped '"' (many $ noneOf "\"")  '"'
+
 parseValue :: Parser Value
 parseValue =
         parseProcedure
-    <|> parseList
+    <|> parseVector
+    <|> parseBoolean
     <|> parseNumber
     <|> parseWord
+    <|> parseString
     <|> parseComment
-
-parseAST :: Parser [Value]
-parseAST = many . lexeme $ parseValue
 
 go :: Parser a -> String -> Either ParseError a
 go p input = parse p ">>" input
+
+parseAST :: Parser [Value]
+parseAST = many . lexeme $ parseValue
 
 parseSeven :: String -> Either ParseError [Value]
 parseSeven input = go parseAST input
