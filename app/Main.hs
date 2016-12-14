@@ -16,7 +16,7 @@ repl :: IO ()
 repl =
   let intro = ["Seven Language"
               , ""
-              , "Press exit() to quit"
+              , "Preess exit() to quit"
               , ""
               ] in
   do

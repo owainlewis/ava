@@ -15,10 +15,10 @@ import qualified Data.Map as M
 
 -- | Executes a program p (a list of operations to perform in sequential order)
 --
--- eval1 [Procedure ">" [Number 20, Number 20, Word "+"], Word ">"]
+-- eval1 [Procedure ">" [Integer 20, Integer 20, Word "+"], Word ">"]
 evalS :: [Value] -> Stack -> IO (Either ProgramError (), Stack)
 evalS p stack = run (forM_ p evaluate) stack
-    where evaluate (Number n) = push $ Number n
+    where evaluate (Integer n) = push $ Integer n
           evaluate (Vector xs) = push $ Vector xs
           evaluate (Boolean b) = push $ Boolean b
           evaluate (String s) = push $ String s

@@ -2,6 +2,44 @@
 
 A stack based programming language with AOT checking
 
+### IDEAS
+
+Macro to swap operation ordering for more familiar syntax. Take this if statement
+
+```
+y ELSE x THEN [] IF
+
+;; Becomes
+
+@reverse
+
+IF []
+  THEN x
+  ELSE y
+```
+
+## DOCS
+
+### Numeric Operations
+
+### String Operations
+
+### Stack Operations
+
+* SWAP
+* POP
+* DUP
+* APPLY
+* UNIT
+
+### Boolean Operations
+
+* AND
+* OR
+* NOT
+
+IO Operations
+
 ```forth
 # =====================================
 # Example program

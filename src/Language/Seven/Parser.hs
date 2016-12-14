@@ -33,8 +33,8 @@ lexeme p = spaces *> p <* spaces
 symbol :: Parser Char
 symbol = oneOf "+-*"
 
-parseNumber :: Parser Value
-parseNumber = Number <$> integer
+parseInteger :: Parser Value
+parseInteger = Integer <$> integer
 
 parseBoolean :: Parser Value
 parseBoolean = parseTrue <|> parseFalse
@@ -95,7 +95,7 @@ parseValue =
         parseProcedure
     <|> parseVector
     <|> parseBoolean
-    <|> parseNumber
+    <|> parseInteger
     <|> parseWord
     <|> parseString
     <|> parseComment

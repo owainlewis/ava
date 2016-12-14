@@ -1,3 +1,5 @@
+USING collections.vector => vector
+
 # =====================================
 # Example program
 # =====================================
