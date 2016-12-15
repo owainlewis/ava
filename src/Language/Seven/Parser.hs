@@ -31,7 +31,7 @@ lexeme :: Parser a -> Parser a
 lexeme p = spaces *> p <* spaces
 
 symbol :: Parser Char
-symbol = oneOf "+-*"
+symbol = oneOf "+-*<>="
 
 parseInteger :: Parser Value
 parseInteger = Integer <$> integer

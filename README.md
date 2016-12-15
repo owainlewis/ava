@@ -20,40 +20,24 @@ IF []
 
 ## DOCS
 
-### Numeric Operations
+Standard Library
 
-### String Operations
-
-### Stack Operations
-
-* SWAP
-* POP
-* DUP
-* APPLY
-* UNIT
-
-### Boolean Operations
-
-* AND
-* OR
-* NOT
-
-IO Operations
+* AND Push the result of the logical AND of the top two items.
+* OR Push the result of the logical OR of the top two items.
+* NOT Push the result of the logical NOT of the top item.
+* NAND Push the result of the logical NAND of the top two items.
+* NOR Push the result of the logical NOR of the top two items
 
 ```forth
 # =====================================
 # Example program
 # =====================================
 
-@define double (x -> x) {
-  2 *
+@define DOUBLE (x -> x) {
+  2 TIMES
 }
 
-10 20 double
-
-swap print
-
-40 50 double print swap print
+10 20 DOUBLE SWAP PRINT
 ```
 
 ## Features

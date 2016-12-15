@@ -1,11 +1,13 @@
-USING collections.vector => vector
-
 # =====================================
 # Example program
 # =====================================
 
-@define double (x -> x) {
-  2 *
+@DEFINE * (x -> x) {
+  TIMES
+}
+
+@define DOUBLE (x -> x) {
+  2 TIMES
 }
 
 [1, 2, 3] 10 concat head []
