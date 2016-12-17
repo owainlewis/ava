@@ -18,7 +18,12 @@ library
   exposed-modules:     Language.Seven.Core
                      , Language.Seven.AST
                      , Language.Seven.Parser
-  build-depends:       base >= 4.7 && < 5, lens, mtl, containers, parsec
+  build-depends:       base >= 4.7 && < 5
+                     , lens
+                     , mtl
+                     , containers
+                     , parsec
+                     , text
   default-language:    Haskell2010
 
 executable seven-exe
