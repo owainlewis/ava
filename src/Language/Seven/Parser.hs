@@ -1,85 +1,49 @@
-{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Language.Seven.Parser
-    ( parseSeven
-    , parseAST
+    ( parseInteger
+    , parseFloat
+    , parseBoolean
+    , parseString
+    , parseVector
+    , parseWord
+    , parseComment
+    , readExpr
+    , parseMany
     ) where
 
-import           Language.Seven.AST
 import           Text.Parsec
-import           Text.Parsec.String (Parser)
+import           Text.Parsec.Text     (Parser)
 
-alpha :: Parser String
-alpha = many (oneOf chars)
-    where chars = ['a'..'z'] ++ ['A'..'Z']
+import qualified Data.Text            as T
+import           Language.Seven.AST   as AST
+import qualified Language.Seven.Lexer as Lexer
 
-float :: Parser Float
-float = fmap read $ (many1 digit) <++> decimal
-    where
-      decimal = option "" $ char '.' <:> (many1 digit)
-      (<++>) a b = (++) <$> a <*> b
-      (<:>) a b = (:) <$> a <*> b
+parseInteger :: Parser AST.Value
+parseInteger = AST.Integer <$> Lexer.integer
 
-integer :: Parser Int
-integer = read <$> (try positiveInteger <|> try negativeInteger <|> integer)
-    where integer = many1 digit
-          positiveInteger = char '+' *> integer
-          negativeInteger = char '-' <:> integer
-          (<:>) a b = (:) <$> a <*> b
+parseFloat :: Parser AST.Value
+parseFloat = AST.Float <$> Lexer.float
 
-lexeme :: Parser a -> Parser a
-lexeme p = spaces *> p <* spaces
+parseNumber :: Parser AST.Value
+parseNumber = try parseFloat <|> parseInteger
 
-symbol :: Parser Char
-symbol = oneOf "+-*<>="
-
-parseInteger :: Parser Value
-parseInteger = Integer <$> integer
-
-parseBoolean :: Parser Value
+parseBoolean :: Parser AST.Value
 parseBoolean = parseTrue <|> parseFalse
-    where parseFalse = ulift (Boolean False) <$> string "False"
-          parseTrue  = ulift (Boolean True) <$> string "True"
-          ulift v = (\_ -> v)
+  where
+    parseTrue =
+      (Lexer.reserved "true") >> (return $ AST.Boolean True)
+    parseFalse =
+      (Lexer.reserved "false") >> (return $ AST.Boolean False)
 
--- | Generalized parser for wrapped structures like sexps etc
---
-wrapped :: Char -> Parser a -> Char -> Parser a
-wrapped l p r = let lexchar = lexeme . char in
-                lexchar l *> p <* lexchar r
+parseString :: Parser AST.Value
+parseString = AST.String . T.unpack <$> Lexer.stringLiteral
 
--- | Lifts a parser of a to a parser for { a }
---
-braces :: Parser a -> Parser a
-braces p = wrapped '{' p '}'
+parseVector :: Parser AST.Value
+parseVector = Vector <$>  between (char '[') (char ']') p
+    where p = Lexer.commaSep parseExpr
 
-parens :: Parser a -> Parser a
-parens p = wrapped '(' p ')'
-
-parseVector :: Parser Value
-parseVector = do
-  char '['
-  body <- sepBy parseValue (spaces *> string "," <* spaces)
-  char ']'
-  return (Vector body)
-
--- | Defines a parser for functions
---
--- Example
---
--- fn double (-- add numbers to the stack --) {
---   swap dup cons
--- }
-parseProcedure :: Parser Value
-parseProcedure = do
-      string "@define" <* spaces
-      p <- many1 alphaNum
-      lexeme $ parens (many $ noneOf ")")
-      body <- braces $ parseAST
-      return $ Procedure p body
-
-parseWord :: Parser Value
-parseWord = Word <$> many1 (symbol <|> alphaNum)
+parseWord :: Parser AST.Value
+parseWord = Word . T.unpack <$> Lexer.identifier
 
 parseComment :: Parser Value
 parseComment = do
@@ -87,24 +51,30 @@ parseComment = do
   comment <- many $ noneOf "\n"
   return $ Comment comment
 
-parseString :: Parser Value
-parseString = String <$> wrapped '"' (many $ noneOf "\"")  '"'
+-- -- | Defines a parser for functions
+-- --
+-- -- Example
+-- --
+-- -- fn double (-- add numbers to the stack --) {
+-- --   swap dup cons
+-- -- }
+-- parseProcedure :: Parser Value
+-- parseProcedure = do
+--       string "@define" <* spaces
+--       p <- many1 alphaNum
+--       lexeme $ parens (many $ noneOf ")")
+--       body <- braces $ parseAST
+--       return $ Procedure p body
 
-parseValue :: Parser Value
-parseValue =
-        parseProcedure
-    <|> parseVector
-    <|> parseBoolean
-    <|> parseInteger
-    <|> parseWord
-    <|> parseString
-    <|> parseComment
+parseExpr :: Parser AST.Value
+parseExpr = parseNumber
+        <|> parseString
+        <|> parseVector
+        <|> parseBoolean
+        <|> parseWord
 
-go :: Parser a -> String -> Either ParseError a
-go p input = parse p ">>" input
+readExpr :: Parser a -> T.Text -> Either ParseError a
+readExpr p = parse p "<stdin>"
 
-parseAST :: Parser [Value]
-parseAST = many . lexeme $ parseValue
-
-parseSeven :: String -> Either ParseError [Value]
-parseSeven input = go parseAST input
+parseMany :: T.Text -> Either ParseError [Value]
+parseMany = readExpr (manyTill parseExpr eof)

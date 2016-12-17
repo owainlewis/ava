@@ -5,7 +5,8 @@ import           Data.List   (intersperse)
 import           Data.Monoid ((<>))
 
 data Value = Word! String
-           | Integer! Int
+           | Integer! Integer
+           | Float! Double
            | Vector! [Value]
            | String! String
            | Boolean! Bool
@@ -16,6 +17,7 @@ data Value = Word! String
 instance Show Value where
     show (Word x)        = x
     show (Integer x)     = show x
+    show (Float x)      = show x
     show (Vector xs)     = let innerForms =
                                  concat $ intersperse "," (map show xs) in
                           "[" ++ innerForms ++ "]"
@@ -28,6 +30,7 @@ instance Show Value where
 instance Eq Value where
   (Word x)          == (Word y)          = x == y
   (Integer x)       == (Integer y)       = x == y
+  (Float x)        == (Float y)        = x == y
   (Vector xs)       == (Vector ys)       = xs == ys
   (String x)        == (String y)        = x == y
   (Boolean x)       == (Boolean y)       = x == y
@@ -36,11 +39,12 @@ instance Eq Value where
   x                 == y                 = False
 
 instance Ord Value where
-  (Word x) `compare` (Word y) = x `compare` y
-  (Integer x) `compare` (Integer y) = x `compare` y
-  (Vector xs)  `compare` (Vector ys)       = xs `compare` ys
-  (String x)     `compare` (String y)        = x `compare` y
-  (Boolean x)      `compare` (Boolean y)       = x `compare` y
+  (Word x)          `compare` (Word y) = x `compare` y
+  (Integer x)       `compare` (Integer y) = x `compare` y
+  (Float x)        `compare` (Float y) = x `compare` y
+  (Vector xs)       `compare` (Vector ys)       = xs `compare` ys
+  (String x)        `compare` (String y)        = x `compare` y
+  (Boolean x)       `compare` (Boolean y)       = x `compare` y
   (Variable x1 y1)  `compare` (Variable x2 y2)  = x1 `compare` x2
   (Procedure x1 y1) `compare` (Procedure x2 y2) = x1 `compare` x2
 
@@ -51,6 +55,10 @@ isWord _        = False
 isInteger :: Value -> Bool
 isInteger (Integer _) = True
 isInteger _           = False
+
+isFloat :: Value -> Bool
+isFloat (Float _) = True
+isFloat _         = False
 
 isVector :: Value -> Bool
 isVector (Vector _) = True

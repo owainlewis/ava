@@ -1,21 +1,38 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Language.Seven.Lexer where
+module Language.Seven.Lexer
+    ( lexer
+    , identifier
+    , reserved
+    , operator
+    , parens
+    , lexeme
+    , integer
+    , float
+    , stringLiteral
+    , commaSep
+    , whiteSpace
+    ) where
 
-import Text.Parsec
-import Text.Parsec.Text
+import           Data.Functor.Identity (Identity)
+import           Text.Parsec
+import           Text.Parsec.Text
 
-import qualified Text.Parsec.Token as Token
-import qualified Text.Parsec.Language as Lang
-import qualified Data.Text as T
+import qualified Data.Text             as T
+import qualified Text.Parsec.Language  as Lang
+import qualified Text.Parsec.Token     as Token
 
-import Language.Seven.AST
-import Data.Functor.Identity (Identity)
+-- |-----------------------------------------------------------------------
 
-lexer :: Token.GenTokenParser T.Text () Identity
+lexer :: Token.GenTokenParser T.Text st Identity
 lexer = Token.makeTokenParser languageDef
 
-languageDef :: Token.GenLanguageDef T.Text () Identity
+readExpr :: Parser a -> T.Text -> Either ParseError a
+readExpr p = parse p "<stdin>"
+
+-- | -----------------------------------------------------------------------
+
+languageDef :: Token.GenLanguageDef T.Text st Identity
 languageDef = Lang.emptyDef {
     Token.commentStart = "{-"
   , Token.commentEnd = "-}"
@@ -24,38 +41,43 @@ languageDef = Lang.emptyDef {
   , Token.opLetter = oneOf ":!#$%%&*+./<=>?@\\^|-~"
   , Token.identStart = letter
   , Token.identLetter = alphaNum
-  , Token.reservedNames = []
-  , Token.reservedOpNames = []
+  , Token.reservedNames = [ "if"
+                          , "then"
+                          , "else"
+                          , "true"
+                          , "false"
+                          ]
+  , Token.reservedOpNames = ["+"]
   , Token.caseSensitive = True
 }
 
-reservedOp :: String -> Parser ()
-reservedOp op = Token.reservedOp lexer op
+identifier :: Parser T.Text
+identifier = T.pack <$> Token.identifier lexer
 
--- Parser surrounding parens
-parens :: ParsecT T.Text () Identity a -> ParsecT T.Text () Identity a
+-- Parse a reserved name
+reserved :: T.Text -> Parser ()
+reserved op = Token.reserved lexer $ T.unpack op
+
+operator :: T.Text -> Parser ()
+operator op = Token.reservedOp lexer $ T.unpack op
+
+parens :: Parser a -> Parser a
 parens = Token.parens lexer
 
--- Parse an integer
-integer :: ParsecT T.Text () Identity Integer
+lexeme :: Parser a -> Parser a
+lexeme = Token.lexeme lexer
+
+integer :: Parser Integer
 integer = Token.integer lexer
 
--- Parser a floating point number
-float :: ParsecT T.Text () Identity Double
+float :: Parser Double
 float = Token.float lexer
 
--- Parser a string literal
-stringLiteral :: ParsecT T.Text () Identity String
-stringLiteral = Token.stringLiteral lexer
+stringLiteral :: Parser T.Text
+stringLiteral = T.pack <$> Token.stringLiteral lexer
 
----------------------------------------
+commaSep :: Parser a -> Parser [a]
+commaSep = Token.commaSep lexer
 
-parseReserved :: Parser Value
-parseReserved = (reservedOp "True" >> return (Boolean True))
-            <|> (reservedOp "False" >> return (Boolean False))
-
-languageParser :: Parser [Value]
-languageParser = many parseReserved
-
---readExpr :: T.Text -> Either ParseError [Value]
-readExpr p = parse p "<stdin>"
+whiteSpace :: Parser ()
+whiteSpace  = Token.whiteSpace lexer
