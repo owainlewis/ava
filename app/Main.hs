@@ -4,17 +4,17 @@ module Main
   ) where
 
 import qualified Data.Map               as M
-import           Language.Seven.AST
-import qualified Language.Seven.Eval    as Eval
-import qualified Language.Seven.Machine as Machine
-import qualified Language.Seven.Parser  as Parser
+import           Language.Ava.AST
+import qualified Language.Ava.Eval    as Eval
+import qualified Language.Ava.Machine as Machine
+import qualified Language.Ava.Parser  as Parser
 import           System.IO              (hFlush, stdout)
 
 -- | Run a (R)ead (E)val (P)rint (L)oop top level starting with an empty state
 --
 repl :: IO ()
 repl =
-  let intro = ["Seven Language"
+  let intro = ["Ava Language"
               , ""
               , "Preess exit() to quit"
               , ""
@@ -33,7 +33,7 @@ runRepl stackState = do
     if ln == "exit()"
       then return ()
       else
-        case (Parser.parseSeven ln) of
+        case (Parser.parseMany ln) of
             Left e -> do
                 putStrLn . show $ e
                 runRepl stackState
@@ -46,8 +46,8 @@ runRepl stackState = do
 --
 runProgram :: IO ()
 runProgram = do
-  contents <- readFile "program.seven"
-  case (Parser.parseSeven contents) of
+  contents <- readFile "program.ava"
+  case (Parser.parseMany contents) of
       Right program ->
           Eval.eval program >> return ()
       Left err ->

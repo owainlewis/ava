@@ -5,14 +5,13 @@ import           Data.List   (intersperse)
 import           Data.Monoid ((<>))
 
 data Value = Word! String
-           | Integer! Integer
+           | Integer! Int
            | Float! Double
            | Vector! [Value]
            | String! String
            | Boolean! Bool
            | Variable! String Value
            | Procedure! String [Value]
-           | Comment! String -- TODO remove me?
 
 instance Show Value where
     show (Word x)        = x
@@ -25,7 +24,6 @@ instance Show Value where
     show (Boolean x)     = show x
     show (Variable x y)  = "VAR " ++ x
     show (Procedure x y) = "() =>"
-    show (Comment x)     = x
 
 instance Eq Value where
   (Word x)          == (Word y)          = x == y

@@ -6,7 +6,7 @@ module Language.Ava.Machine where
 import           Control.Lens
 import           Control.Monad.Except
 import           Control.Monad.State
-import           Language.Seven.AST
+import           Language.Ava.AST
 
 import qualified Data.Map             as M
 

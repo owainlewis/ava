@@ -22,7 +22,6 @@ evalS p stack = run (forM_ p evaluate) stack
           evaluate (Vector xs) = push $ Vector xs
           evaluate (Boolean b) = push $ Boolean b
           evaluate (String s) = push $ String s
-          evaluate (Comment _) = noop
           evaluate (Word w) = do
                 -- First we need to check in the current vm env to see if
                 -- a user has defined the value of a word w to be some procedure p

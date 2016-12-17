@@ -150,7 +150,8 @@ binOp op = do
     x <- Machine.pop
     y <- Machine.pop
     case (x,y) of
-        (Integer x1, Integer y1) -> Machine.push $ Integer (x1 `op` y1)
+        (Integer x1, Integer y1) ->
+            Machine.push $ Integer (x1 `op` y1)
         _ -> Machine.raise $ Machine.TypeError "Expecting two integers"
 
 -- | Utility for constructing binary operations that return a boolean value

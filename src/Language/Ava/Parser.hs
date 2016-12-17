@@ -6,7 +6,6 @@ module Language.Ava.Parser
     , parseString
     , parseVector
     , parseWord
-    , parseComment
     , readExpr
     , parseMany
     ) where
@@ -19,7 +18,7 @@ import           Language.Ava.AST   as AST
 import qualified Language.Ava.Lexer as Lexer
 
 parseInteger :: Parser AST.Value
-parseInteger = AST.Integer <$> Lexer.integer
+parseInteger = AST.Integer . fromIntegral <$> Lexer.integer
 
 parseFloat :: Parser AST.Value
 parseFloat = AST.Float <$> Lexer.float
@@ -44,12 +43,6 @@ parseVector = Vector <$>  between (char '[') (char ']') p
 
 parseWord :: Parser AST.Value
 parseWord = Word . T.unpack <$> Lexer.identifier
-
-parseComment :: Parser Value
-parseComment = do
-  char '#'
-  comment <- many $ noneOf "\n"
-  return $ Comment comment
 
 -- -- | Defines a parser for functions
 -- --
