@@ -10,7 +10,6 @@ import qualified Text.Parsec.Language as Lang
 import qualified Data.Text as T
 
 import Language.Seven.AST
-
 import Data.Functor.Identity (Identity)
 
 lexer :: Token.GenTokenParser T.Text () Identity
@@ -21,32 +20,42 @@ languageDef = Lang.emptyDef {
     Token.commentStart = "{-"
   , Token.commentEnd = "-}"
   , Token.commentLine = "--"
-  , Token.opStart = Token.opLetter languageDef
+  , Token.opStart = oneOf ":!#$%%&*+./<=>?@\\^|-~"
   , Token.opLetter = oneOf ":!#$%%&*+./<=>?@\\^|-~"
-  , Token.identStart      = letter
-  , Token.identLetter     = alphaNum
-  , Token.reservedOpNames = ["+", "-", "*", "/", ":="]
+  , Token.identStart = letter
+  , Token.identLetter = alphaNum
+  , Token.reservedNames = []
+  , Token.reservedOpNames = []
+  , Token.caseSensitive = True
 }
 
-identifier = Token.identifier lexer -- parses an identifier
-reserved = Token.reserved lexer -- parses a reserved name
-parens = Token.parens lexer -- parses surrounding parenthesis:
+reservedOp :: String -> Parser ()
+reservedOp op = Token.reservedOp lexer op
 
+-- Parser surrounding parens
+parens :: ParsecT T.Text () Identity a -> ParsecT T.Text () Identity a
+parens = Token.parens lexer
+
+-- Parse an integer
 integer :: ParsecT T.Text () Identity Integer
-integer = Token.integer lexer -- parses an integer
+integer = Token.integer lexer
 
+-- Parser a floating point number
 float :: ParsecT T.Text () Identity Double
-float = Token.float lexer -- parses a double
+float = Token.float lexer
 
-whiteSpace = Token.whiteSpace lexer -- parses whitespace
+-- Parser a string literal
+stringLiteral :: ParsecT T.Text () Identity String
+stringLiteral = Token.stringLiteral lexer
 
-reservedOp :: T.Text -> Parser ()
-reservedOp op = Token.reservedOp lexer $ T.unpack op
+---------------------------------------
 
 parseReserved :: Parser Value
-parseReserved =
-              (reservedOp "True" >> return (Boolean True))
-          <|> (reservedOp "False" >> return (Boolean False))
+parseReserved = (reservedOp "True" >> return (Boolean True))
+            <|> (reservedOp "False" >> return (Boolean False))
 
---readExpr :: T.Text -> Either ParseError Value
+languageParser :: Parser [Value]
+languageParser = many parseReserved
+
+--readExpr :: T.Text -> Either ParseError [Value]
 readExpr p = parse p "<stdin>"
