@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Language.Seven.AST where
+module Language.Ava.AST where
 
 import           Data.List   (intersperse)
 import           Data.Monoid ((<>))

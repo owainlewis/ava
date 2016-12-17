@@ -1,7 +1,6 @@
-module Language.Seven.ParserSpec ( spec ) where
+module Language.Ava.ParserSpec ( spec ) where
 
-
-import qualified Language.Seven.Parser as Parser
+import qualified Language.Ava.Parser as Parser
 
 import Test.Hspec
 

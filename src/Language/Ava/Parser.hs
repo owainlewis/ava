@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Language.Seven.Parser
+module Language.Ava.Parser
     ( parseInteger
     , parseFloat
     , parseBoolean
@@ -15,8 +15,8 @@ import           Text.Parsec
 import           Text.Parsec.Text     (Parser)
 
 import qualified Data.Text            as T
-import           Language.Seven.AST   as AST
-import qualified Language.Seven.Lexer as Lexer
+import           Language.Ava.AST   as AST
+import qualified Language.Ava.Lexer as Lexer
 
 parseInteger :: Parser AST.Value
 parseInteger = AST.Integer <$> Lexer.integer

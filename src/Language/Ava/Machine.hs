@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE TemplateHaskell            #-}
-module Language.Seven.Machine where
+module Language.Ava.Machine where
 
 import           Control.Lens
 import           Control.Monad.Except

@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Language.Seven.Lexer
+module Language.Ava.Lexer
     ( lexer
     , identifier
     , reserved

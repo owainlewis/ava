@@ -1,15 +1,15 @@
-module Language.Seven.Eval
+module Language.Ava.Eval
     ( evalS
     , eval
     ) where
 
 import Control.Exception hiding (TypeError)
 import Control.Monad.State
-import Language.Seven.AST
-import Language.Seven.Machine
+import Language.Ava.AST
+import Language.Ava.Machine
 import Control.Monad(forM_)
 
-import qualified Language.Seven.Std.Base as Std
+import qualified Language.Ava.Std.Base as Std
 
 import qualified Data.Map as M
 

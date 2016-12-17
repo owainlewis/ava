@@ -1,9 +1,9 @@
-module Language.Seven.Std.Base (symTab) where
+module Language.Ava.Std.Base (symTab) where
 
 import           Control.Monad.State
 import qualified Data.Map               as M
-import           Language.Seven.AST
-import qualified Language.Seven.Machine as Machine
+import           Language.Ava.AST
+import qualified Language.Ava.Machine as Machine
 
 -- --------------------------------------------------------------
 -- | Standard Library
