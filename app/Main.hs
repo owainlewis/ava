@@ -4,15 +4,15 @@ module Main
   , repl
   ) where
 
-import qualified Data.Map               as M
+import qualified Data.Map             as M
 import           Language.Ava.AST
 import qualified Language.Ava.Eval    as Eval
 import qualified Language.Ava.Machine as Machine
 import qualified Language.Ava.Parser  as Parser
-import           System.IO              (hFlush, stdout)
+import           System.IO            (hFlush, stdout)
 
-import qualified Data.Text as T
-import qualified Data.Text.IO as TextIO
+import qualified Data.Text            as T
+import qualified Data.Text.IO         as TextIO
 
 -- | Run a (R)ead (E)val (P)rint (L)oop top level starting with an empty state
 --

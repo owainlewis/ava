@@ -1,7 +1,7 @@
 module Language.Ava.Std.Base (symTab) where
 
 import           Control.Monad.State
-import qualified Data.Map               as M
+import qualified Data.Map             as M
 import           Language.Ava.AST
 import qualified Language.Ava.Machine as Machine
 
@@ -51,13 +51,13 @@ debug = do
 
 safeHead :: [a] -> Maybe a
 safeHead (x:xs) = Just x
-safeHead [] = Nothing
+safeHead []     = Nothing
 
 printTop :: Machine.VM ()
 printTop = do
     rt <- Machine.getRuntime
     case safeHead rt of
-        Just v -> liftIO . print $ v
+        Just v  -> liftIO . print $ v
         Nothing -> return ()
 
 -- Swap the first two items on the stack
@@ -86,7 +86,7 @@ dup = Machine.modifyRuntime f
 --
 pop :: Machine.VM ()
 pop = Machine.modifyRuntime f
-    where f [] = []
+    where f []     = []
           f (x:xs) = xs
 
 -- Given an item on the stack, turn it into a list
@@ -96,7 +96,7 @@ pop = Machine.modifyRuntime f
 unit :: Machine.VM ()
 unit = Machine.modifyRuntime f
     where f (x:xs) = Vector [x] : xs
-          f [] = []
+          f []     = []
 
 -- Given a list of elements, apply them to the stack
 --
@@ -129,7 +129,7 @@ cons = do
     runtime <- Machine.getRuntime
     case runtime of
       (x : Vector xs : ys) -> Machine.setRuntime $ (Vector (x : xs)) : ys
-      _ -> Machine.noop
+      _                    -> Machine.noop
 
 -- TODO
 --

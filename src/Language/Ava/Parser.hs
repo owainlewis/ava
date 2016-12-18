@@ -11,9 +11,9 @@ module Language.Ava.Parser
     ) where
 
 import           Text.Parsec
-import           Text.Parsec.Text     (Parser)
+import           Text.Parsec.Text   (Parser)
 
-import qualified Data.Text            as T
+import qualified Data.Text          as T
 import           Language.Ava.AST   as AST
 import qualified Language.Ava.Lexer as Lexer
 
@@ -60,6 +60,7 @@ parseProcedure = do
       p <- Lexer.identifier
       -- An optional comment
       optional $ Lexer.lexeme $ Lexer.parens (many $ noneOf ")")
+      -- A list of expressions forming the definition body
       body <- Lexer.braces (many parseExpr)
       return $ Procedure (T.unpack p) body
 

@@ -3,15 +3,15 @@ module Language.Ava.Eval
     , eval
     ) where
 
-import Control.Exception hiding (TypeError)
-import Control.Monad.State
-import Language.Ava.AST
-import Language.Ava.Machine
-import Control.Monad(forM_)
+import           Control.Exception     hiding (TypeError)
+import           Control.Monad         (forM_)
+import           Control.Monad.State
+import           Language.Ava.AST
+import           Language.Ava.Machine
 
 import qualified Language.Ava.Std.Base as Std
 
-import qualified Data.Map as M
+import qualified Data.Map              as M
 
 -- | Executes a program p (a list of operations to perform in sequential order)
 --
