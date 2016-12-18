@@ -6,6 +6,8 @@ module Language.Ava.Lexer
     , reserved
     , operator
     , parens
+    , brackets
+    , braces
     , lexeme
     , integer
     , float
@@ -63,6 +65,12 @@ operator op = Token.reservedOp lexer $ T.unpack op
 
 parens :: Parser a -> Parser a
 parens = Token.parens lexer
+
+braces :: Parser a -> Parser a
+braces = Token.braces lexer
+
+brackets :: Parser a -> Parser a
+brackets = Token.brackets lexer
 
 lexeme :: Parser a -> Parser a
 lexeme = Token.lexeme lexer

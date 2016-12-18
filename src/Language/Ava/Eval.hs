@@ -19,6 +19,7 @@ import qualified Data.Map as M
 evalS :: [Value] -> Stack -> IO (Either ProgramError (), Stack)
 evalS p stack = run (forM_ p evaluate) stack
     where evaluate (Integer n) = push $ Integer n
+          evaluate (Float n) = push $ Float n
           evaluate (Vector xs) = push $ Vector xs
           evaluate (Boolean b) = push $ Boolean b
           evaluate (String s) = push $ String s

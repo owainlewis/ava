@@ -14,7 +14,7 @@ data Value = Word! String
            | Procedure! String [Value]
 
 instance Show Value where
-    show (Word x)        = x
+    show (Word x)        = "Word(" ++ x ++ ")"
     show (Integer x)     = show x
     show (Float x)      = show x
     show (Vector xs)     = let innerForms =
@@ -23,7 +23,9 @@ instance Show Value where
     show (String x)      = x
     show (Boolean x)     = show x
     show (Variable x y)  = "VAR " ++ x
-    show (Procedure x y) = "() =>"
+    show (Procedure x y) = x
+      ++ " => "
+      ++ (concat $ intersperse " " (map show y))
 
 instance Eq Value where
   (Word x)          == (Word y)          = x == y

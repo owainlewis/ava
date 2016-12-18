@@ -17,6 +17,16 @@ import qualified Data.Text            as T
 import           Language.Ava.AST   as AST
 import qualified Language.Ava.Lexer as Lexer
 
+-------------------------------------------------------------
+
+readExpr :: Parser a -> T.Text -> Either ParseError a
+readExpr p = parse p "<stdin>"
+
+parseMany :: T.Text -> Either ParseError [Value]
+parseMany = readExpr (manyTill parseExpr eof)
+
+-------------------------------------------------------------
+
 parseInteger :: Parser AST.Value
 parseInteger = AST.Integer . fromIntegral <$> Lexer.integer
 
@@ -38,36 +48,25 @@ parseString :: Parser AST.Value
 parseString = AST.String . T.unpack <$> Lexer.stringLiteral
 
 parseVector :: Parser AST.Value
-parseVector = Vector <$>  between (char '[') (char ']') p
-    where p = Lexer.commaSep parseExpr
+parseVector = Vector <$>  Lexer.brackets (Lexer.commaSep parseExpr)
 
 parseWord :: Parser AST.Value
 parseWord = Word . T.unpack <$> Lexer.identifier
 
--- -- | Defines a parser for functions
--- --
--- -- Example
--- --
--- -- fn double (-- add numbers to the stack --) {
--- --   swap dup cons
--- -- }
--- parseProcedure :: Parser Value
--- parseProcedure = do
---       string "@define" <* spaces
---       p <- many1 alphaNum
---       lexeme $ parens (many $ noneOf ")")
---       body <- braces $ parseAST
---       return $ Procedure p body
+parseProcedure :: Parser Value
+parseProcedure = do
+      try $ string "define" <* spaces
+      -- The definition name
+      p <- Lexer.identifier
+      -- An optional comment
+      optional $ Lexer.lexeme $ Lexer.parens (many $ noneOf ")")
+      body <- Lexer.braces (many parseExpr)
+      return $ Procedure (T.unpack p) body
 
 parseExpr :: Parser AST.Value
 parseExpr = parseNumber
+        <|> parseProcedure
         <|> parseString
         <|> parseVector
         <|> parseBoolean
         <|> parseWord
-
-readExpr :: Parser a -> T.Text -> Either ParseError a
-readExpr p = parse p "<stdin>"
-
-parseMany :: T.Text -> Either ParseError [Value]
-parseMany = readExpr (manyTill parseExpr eof)

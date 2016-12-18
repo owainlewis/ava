@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main
   ( main
   , repl
@@ -9,6 +10,9 @@ import qualified Language.Ava.Eval    as Eval
 import qualified Language.Ava.Machine as Machine
 import qualified Language.Ava.Parser  as Parser
 import           System.IO              (hFlush, stdout)
+
+import qualified Data.Text as T
+import qualified Data.Text.IO as TextIO
 
 -- | Run a (R)ead (E)val (P)rint (L)oop top level starting with an empty state
 --
@@ -28,7 +32,7 @@ runRepl :: Machine.Stack ->  IO ()
 runRepl stackState = do
     putStr "REPL> "
     hFlush stdout
-    ln <- getLine
+    ln <- TextIO.getLine
     hFlush stdout
     if ln == "exit()"
       then return ()
@@ -46,7 +50,7 @@ runRepl stackState = do
 --
 runProgram :: IO ()
 runProgram = do
-  contents <- readFile "program.ava"
+  contents <- TextIO.readFile "program.ava"
   case (Parser.parseMany contents) of
       Right program ->
           Eval.eval program >> return ()
