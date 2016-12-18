@@ -25,7 +25,6 @@ import qualified Data.Map              as M
 
 -- | Executes a program p (a list of operations to perform in sequential order)
 --
--- eval1 [Procedure ">" [Integer 20, Integer 20, Word "+"], Word ">"]
 evalS :: [Value] -> Stack -> IO (Either ProgramError (), Stack)
 evalS p stack = run (forM_ p evaluate) stack
     where evaluate (Integer n) = push $ Integer n
