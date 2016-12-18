@@ -1,5 +1,15 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+-- |
+-- Module      : Language.Ava.Lexer
+-- Copyright   : (c) 2016 Owain Lewis
+--
+-- License     : BSD-style
+-- Maintainer  : owain@owainlewis.com
+-- Stability   : experimental
+-- Portability : GHC
+--
+--
 module Language.Ava.Lexer
     ( lexer
     , identifier

@@ -1,6 +1,16 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE TemplateHaskell            #-}
+-- |
+-- Module      : Language.Ava.Machine
+-- Copyright   : (c) 2016 Owain Lewis
+--
+-- License     : BSD-style
+-- Maintainer  : owain@owainlewis.com
+-- Stability   : experimental
+-- Portability : GHC
+--
+--
 module Language.Ava.Machine where
 
 import           Control.Lens

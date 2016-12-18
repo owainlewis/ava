@@ -1,3 +1,14 @@
+-- |
+-- Module      : Language.Ava.Std.Base
+-- Copyright   : (c) 2016 Owain Lewis
+--
+-- License     : BSD-style
+-- Maintainer  : owain@owainlewis.com
+-- Stability   : experimental
+-- Portability : GHC
+--
+-- Standard library functions
+--
 module Language.Ava.Std.Base (symTab) where
 
 import           Control.Monad.State

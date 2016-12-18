@@ -1,3 +1,13 @@
+-- |
+-- Module      : Language.Ava.Eval
+-- Copyright   : (c) 2016 Owain Lewis
+--
+-- License     : BSD-style
+-- Maintainer  : owain@owainlewis.com
+-- Stability   : experimental
+-- Portability : GHC
+--
+--
 module Language.Ava.Eval
     ( evalS
     , eval

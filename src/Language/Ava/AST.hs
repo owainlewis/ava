@@ -1,4 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
+-- |
+-- Module      : Language.Ava.AST
+-- Copyright   : (c) 2016 Owain Lewis
+--
+-- License     : BSD-style
+-- Maintainer  : owain@owainlewis.com
+-- Stability   : experimental
+-- Portability : GHC
+--
+-- Defines the basic AST for the Ava language
+--
 module Language.Ava.AST where
 
 import           Data.List   (intersperse)

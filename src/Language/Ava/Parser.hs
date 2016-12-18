@@ -1,4 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
+-- |
+-- Module      : Language.Ava.Parser
+-- Copyright   : (c) 2016 Owain Lewis
+--
+-- License     : BSD-style
+-- Maintainer  : owain@owainlewis.com
+-- Stability   : experimental
+-- Portability : GHC
+--
+--
 module Language.Ava.Parser
     ( parseInteger
     , parseFloat
