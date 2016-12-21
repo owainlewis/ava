@@ -22,9 +22,11 @@ import qualified Data.Map             as M
 
 data Stack = Stack {
     -- The runtime stack that holds the current program state
-    _runtime :: [Value]
-    -- The global environment used to storage user defined procedures
-  , _env     :: M.Map String [Value]
+    _runtime    :: [Value]
+    -- Defined procedures
+  , _procedures :: M.Map String [Value]
+    -- User defined let bindings
+  , _vars       :: M.Map String Value
 } deriving ( Eq, Show )
 
 makeLenses ''Stack
@@ -77,15 +79,25 @@ pop = use runtime >>= \case
 noop :: VM ()
 noop = return ()
 
--- | Insert a sequence of operations into the current VM env
+-- | Insert a sequence of operations into the current VM procedures map
 --
-setEnv :: String -> [Value] -> VM ()
-setEnv k v = env %= M.insert k v
+setProcedure :: String -> [Value] -> VM ()
+setProcedure k v = procedures %= M.insert k v
 
--- | Extract a value from the environment
+-- | Extract a procedure from the defined procedures map
 --
-getEnv :: String -> VM (Maybe [Value])
-getEnv k = M.lookup k <$> use env
+getProcedure :: String -> VM (Maybe [Value])
+getProcedure k = M.lookup k <$> use procedures
+
+-- | Insert a sequence of operations into the current VM procedures map
+--
+setVar :: String -> Value -> VM ()
+setVar k v = vars %= M.insert k v
+
+-- | Extract a procedure from the defined procedures map
+--
+getVar :: String -> VM (Maybe Value)
+getVar k = M.lookup k <$> use vars
 
 -- Fetch the runtime state
 --

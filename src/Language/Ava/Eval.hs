@@ -34,6 +34,8 @@ evaluate (Float n)   = push $ Float n
 evaluate (Vector xs) = push $ Vector xs
 evaluate (Boolean b) = push $ Boolean b
 evaluate (String s)  = push $ String s
+-- TODO checking on duplicates or clashes with procs
+evaluate (LetStmt k v) = setVar k v
 evaluate (IfStmt cond pos neg) = do
     outcome <- mapM_ evaluate cond
     runtime <- getRuntime
@@ -47,8 +49,8 @@ evaluate (IfStmt cond pos neg) = do
 evaluate (Word w) = do
     -- First we need to check in the current vm env to see if
     -- a user has defined the value of a word w to be some procedure p
-    v <- getEnv w
-    case v of
+    p <- getProcedure w
+    case p of
         -- If the value exists then evaluate the procedure
         Just procedure -> mapM_ evaluate procedure
         -- Else lookup in the symbol table
@@ -56,12 +58,16 @@ evaluate (Word w) = do
             case (M.lookup w Std.symTab) of
                 Just procedure ->
                     procedure
-                Nothing ->
-                    raise $ RuntimeException ("Unbound word " ++ w)
+                Nothing -> do
+                    v <- getVar w
+                    case v of
+                      Just value -> evaluate value
+                      Nothing ->
+                          raise $ RuntimeException ("Unbound word " ++ w)
 -- | Evaluate a procedure by updating the environment
-evaluate (Procedure p instrs) = setEnv p instrs
+evaluate (Procedure p instrs) = setProcedure p instrs
 
 -- | Works like eval but doesn't require an initial input state
 --
 eval :: [Value] -> IO (Either ProgramError (), Stack)
-eval = flip evalS $ Stack [] (M.empty)
+eval = flip evalS $ Stack [] (M.empty) (M.empty)

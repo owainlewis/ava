@@ -21,23 +21,10 @@ data Value = Word! String
            | Vector! [Value]
            | String! String
            | Boolean! Bool
-           | IfStmt [Value] [Value] [Value]
+           | LetStmt! String Value
+           | IfStmt! [Value] [Value] [Value]
            | Procedure! String [Value]
            deriving ( Show )
-
--- instance Show Value where
---     show (Word x)        = "Word(" ++ x ++ ")"
---     show (Integer x)     = show x
---     show (Float x)      = show x
---     show (Vector xs)     = let innerForms =
---                                  concat $ intersperse "," (map show xs) in
---                           "[" ++ innerForms ++ "]"
---     show (String x)      = x
---     show (Boolean x)     = show x
---     show (Procedure x y) = x
---       ++ " => "
---       ++ (concat $ intersperse " " (map show y))
---     show (IfStmt cond p c) = "IF"
 
 instance Eq Value where
   (Word x)          == (Word y)          = x == y
@@ -46,16 +33,20 @@ instance Eq Value where
   (Vector xs)       == (Vector ys)       = xs == ys
   (String x)        == (String y)        = x == y
   (Boolean x)       == (Boolean y)       = x == y
+  (LetStmt k1 v1)   == (LetStmt k2 v2)   = k1 == k2 && v1 == v2
+  (IfStmt x1 y1 z1) == (IfStmt x2 y2 z2) = x1 == x2 && y1 == y2 && z1 == z2
   (Procedure x1 y1) == (Procedure x2 y2) = x1 == x2 && y1 == y2
   x                 == y                 = False
 
 instance Ord Value where
-  (Word x)          `compare` (Word y)          = x `compare` y
-  (Integer x)       `compare` (Integer y)       = x `compare` y
-  (Float x)         `compare` (Float y)         = x `compare` y
+  (Word x)          `compare` (Word y)          = x  `compare` y
+  (Integer x)       `compare` (Integer y)       = x  `compare` y
+  (Float x)         `compare` (Float y)         = x  `compare` y
   (Vector xs)       `compare` (Vector ys)       = xs `compare` ys
-  (String x)        `compare` (String y)        = x `compare` y
-  (Boolean x)       `compare` (Boolean y)       = x `compare` y
+  (String x)        `compare` (String y)        = x  `compare` y
+  (Boolean x)       `compare` (Boolean y)       = x  `compare` y
+  (LetStmt k1 v1)   `compare` (LetStmt k2 v2)   = k1 `compare` k2
+  (IfStmt x1 y1 z1) `compare` (IfStmt x2 y2 z2) = x1 `compare` x2
   (Procedure x1 y1) `compare` (Procedure x2 y2) = x1 `compare` x2
 
 isWord :: Value -> Bool

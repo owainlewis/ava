@@ -25,7 +25,7 @@ repl =
               ] in
   do
     mapM_ putStrLn intro
-    runRepl (Machine.Stack [] (M.empty))
+    runRepl (Machine.Stack [] (M.empty) (M.empty))
 
 -- | Run the REPL loop providing the current state of the world
 runRepl :: Machine.Stack ->  IO ()

@@ -16,6 +16,8 @@ module Language.Ava.Parser
     , parseString
     , parseVector
     , parseWord
+    , parseIfStmt
+    , parseIfElseStmt
     , readExpr
     , parseMany
     ) where
@@ -78,6 +80,14 @@ parseIfElseStmt = do
     conse <- manyTill parseExpr (Lexer.reserved "end")
     return $ IfStmt cond ant conse
 
+parseLetStmt :: Parser AST.Value
+parseLetStmt = do
+    Lexer.reserved "let"
+    ident <- Lexer.identifier
+    string "="
+    value <- parseExpr
+    return $ LetStmt (T.unpack ident) value
+
 parseWord :: Parser AST.Value
 parseWord = Word . T.unpack <$> Lexer.identifier
 
@@ -98,5 +108,6 @@ parseExpr = try parseNumber
         <|> parseString
         <|> parseVector
         <|> parseBoolean
+        <|> parseLetStmt
         <|> (try parseIfElseStmt <|> parseIfStmt)
         <|> parseWord

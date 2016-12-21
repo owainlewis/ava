@@ -60,6 +60,7 @@ languageDef = Lang.emptyDef {
                           , "end"
                           , "true"
                           , "false"
+                          , "let"
                           ]
   , Token.reservedOpNames = []
   , Token.caseSensitive = True
