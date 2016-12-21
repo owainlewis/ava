@@ -44,29 +44,30 @@ readExpr p = parse p "<stdin>"
 
 -- | -----------------------------------------------------------------------
 
+identTokens = ":!#$%%&*+./<=>?@\\^|-~"
+
 languageDef :: Token.GenLanguageDef T.Text st Identity
 languageDef = Lang.emptyDef {
     Token.commentStart = "{-"
   , Token.commentEnd = "-}"
   , Token.commentLine = "--"
-  , Token.opStart = oneOf ":!#$%%&*+./<=>?@\\^|-~"
-  , Token.opLetter = oneOf ":!#$%%&*+./<=>?@\\^|-~"
-  , Token.identStart = letter
+  , Token.opStart = oneOf identTokens
+  , Token.opLetter = oneOf identTokens
+  , Token.identStart = alphaNum <|> oneOf identTokens
   , Token.identLetter = alphaNum
   , Token.reservedNames = [ "if"
-                          , "then"
                           , "else"
+                          , "end"
                           , "true"
                           , "false"
                           ]
-  , Token.reservedOpNames = ["+"]
+  , Token.reservedOpNames = []
   , Token.caseSensitive = True
 }
 
 identifier :: Parser T.Text
 identifier = T.pack <$> Token.identifier lexer
 
--- Parse a reserved name
 reserved :: T.Text -> Parser ()
 reserved op = Token.reserved lexer $ T.unpack op
 

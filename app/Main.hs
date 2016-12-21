@@ -20,7 +20,7 @@ repl :: IO ()
 repl =
   let intro = ["Ava Language"
               , ""
-              , "Preess exit() to quit"
+              , "Press exit() to quit"
               , ""
               ] in
   do

@@ -33,7 +33,7 @@ readExpr :: Parser a -> T.Text -> Either ParseError a
 readExpr p = parse p "<stdin>"
 
 parseMany :: T.Text -> Either ParseError [Value]
-parseMany = readExpr (manyTill parseExpr eof)
+parseMany = readExpr $ manyTill parseExpr eof
 
 -------------------------------------------------------------
 
@@ -60,6 +60,24 @@ parseString = AST.String . T.unpack <$> Lexer.stringLiteral
 parseVector :: Parser AST.Value
 parseVector = Vector <$>  Lexer.brackets (Lexer.commaSep parseExpr)
 
+-- if { 20 double 40 = }
+--   "Hello, World!" print
+-- end
+parseIfStmt :: Parser AST.Value
+parseIfStmt = do
+    Lexer.reserved "if"
+    cond <- Lexer.braces $ many parseExpr
+    pos <- manyTill parseExpr (string "end")
+    return $ IfStmt cond pos []
+
+parseIfElseStmt :: Parser AST.Value
+parseIfElseStmt = do
+    Lexer.reserved "if"
+    cond <- Lexer.braces $ many parseExpr
+    ant <- manyTill parseExpr (Lexer.reserved "else")
+    conse <- manyTill parseExpr (Lexer.reserved "end")
+    return $ IfStmt cond ant conse
+
 parseWord :: Parser AST.Value
 parseWord = Word . T.unpack <$> Lexer.identifier
 
@@ -75,9 +93,10 @@ parseProcedure = do
       return $ Procedure (T.unpack p) body
 
 parseExpr :: Parser AST.Value
-parseExpr = parseNumber
+parseExpr = try parseNumber
         <|> parseProcedure
         <|> parseString
         <|> parseVector
         <|> parseBoolean
+        <|> (try parseIfElseStmt <|> parseIfStmt)
         <|> parseWord
