@@ -2,20 +2,34 @@
 
 A stack based programming language with AOT checking
 
-### IDEAS
+```factor
+MODULE Std.Ava.Example
 
-Macro to swap operation ordering for more familiar syntax. Take this if statement
+USING Ava.Core.IO as io
 
-```
-y ELSE x THEN [] IF
+function double (x -> x) @doc "Doubles a number on the stack" {
+  2 flip pop
+  dup cons unit
+}
 
-;; Becomes
+let x = 20
+let y = 40
 
-@reverse
+if { 20 double 40 = }
+  "Hello, World!" io::print
+end
 
-IF []
-  THEN x
-  ELSE y
+if { 20 double 40 = }
+  "Hello, World!" io::print
+else
+  "Foobar!" io::print
+end
+
+let data = {:foo 10, :bar 20}
+
+data map::keys print
+
+x y double io::print
 ```
 
 ## DOCS
