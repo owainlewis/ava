@@ -118,8 +118,8 @@ apply :: Machine.VM ()
 apply = do
     xs <- Machine.getRuntime
     case xs of
-        (Vector ys:xs) -> Machine.setRuntime (ys ++ xs)
-        _              -> Machine.noop
+        ((Vector ys):xs) -> Machine.setRuntime (ys ++ xs)
+        _                -> Machine.noop
 
 -- | Con(cat)enate two lists together
 --
@@ -129,7 +129,8 @@ cat :: Machine.VM ()
 cat = do
     runtime <- Machine.getRuntime
     case runtime of
-        (Vector xs) : (Vector ys) : rest -> Machine.setRuntime $ (Vector (xs ++ ys)) : rest
+        (Vector xs) : (Vector ys) : rest ->
+            Machine.setRuntime $ (Vector (xs ++ ys)) : rest
         _ -> Machine.noop
 
 -- Cons an element onto a list

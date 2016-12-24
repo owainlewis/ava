@@ -92,15 +92,19 @@ parseWord :: Parser AST.Value
 parseWord = Word . T.unpack <$> Lexer.identifier
 
 parseProcedure :: Parser Value
-parseProcedure = do
-      try $ string "define" <* spaces
+parseProcedure =
+  let docString = T.unpack <$> (string "@doc" <* spaces >> Lexer.stringLiteral) in
+    do
+      try $ string "function" <* spaces
       -- The definition name
       p <- Lexer.identifier
       -- An optional comment
-      optional $ Lexer.lexeme $ Lexer.parens (many $ noneOf ")")
+      optional $ Lexer.parens (many $ noneOf ")")
+      -- An optional documentation string
+      doc <- optionMaybe docString
       -- A list of expressions forming the definition body
       body <- Lexer.braces (many parseExpr)
-      return $ Procedure (T.unpack p) body
+      return $ Procedure (T.unpack p) body doc
 
 parseExpr :: Parser AST.Value
 parseExpr = try parseNumber

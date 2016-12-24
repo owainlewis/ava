@@ -48,9 +48,9 @@ runRepl stackState = do
 
 -- | The main entry point is used to run a seven program from file
 --
-runProgram :: IO ()
-runProgram = do
-  contents <- TextIO.readFile "program.ava"
+runProgram :: FilePath -> IO ()
+runProgram p = do
+  contents <- TextIO.readFile p
   case (Parser.parseMany contents) of
       Right program ->
           Eval.eval program >> return ()
@@ -59,4 +59,4 @@ runProgram = do
   return ()
 
 main :: IO ()
-main = repl
+main = runProgram "lib/scratch.ava"

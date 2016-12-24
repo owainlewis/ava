@@ -29,12 +29,11 @@ evalS :: [Value] -> Stack -> IO (Either ProgramError (), Stack)
 evalS p stack = run (forM_ p evaluate) stack
 
 evaluate :: Value -> VM ()
-evaluate (Integer n) = push $ Integer n
-evaluate (Float n)   = push $ Float n
-evaluate (Vector xs) = push $ Vector xs
-evaluate (Boolean b) = push $ Boolean b
-evaluate (String s)  = push $ String s
--- TODO checking on duplicates or clashes with procs
+evaluate (Integer n)   = push $ Integer n
+evaluate (Float n)     = push $ Float n
+evaluate (Vector xs)   = push $ Vector xs
+evaluate (Boolean b)   = push $ Boolean b
+evaluate (String s)    = push $ String s
 evaluate (LetStmt k v) = setVar k v
 evaluate (IfStmt cond pos neg) = do
     outcome <- mapM_ evaluate cond
@@ -46,11 +45,6 @@ evaluate (IfStmt cond pos neg) = do
              else mapM_ evaluate neg
       _ ->
           noop
--- evaluate (Word "apply") = do
---     xs <- getRuntime
---     case xs of
---         (Vector ys:xs) -> setRuntime (ys ++ xs)
---         _              -> noop
 evaluate (Word w) = do
     -- First we need to check in the current vm env to see if
     -- a user has defined the value of a word w to be some procedure p

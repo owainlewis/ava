@@ -1,6 +1,6 @@
 MODULE Std.Ava.Example
 
-USING Ava.Core.IO as io
++ USING Ava.Core.IO as io
 
 function double (x -> x) @doc "Doubles a number on the stack" {
   2 flip pop
