@@ -53,6 +53,7 @@ stackOperations = [ ("UNIT", unit)
                   , ("SWAP", swap)
                   , ("DUP", dup)
                   , ("POP", pop)
+                  , ("CHOICE", choice)
                   ]
 
 debug :: Machine.VM ()
@@ -141,6 +142,14 @@ cons = do
     case runtime of
       (x : Vector xs : ys) -> Machine.setRuntime $ (Vector (x : xs)) : ys
       _                    -> Machine.noop
+
+choice :: Machine.VM ()
+choice = do
+  runtime <- Machine.getRuntime
+  case runtime of
+    (b : a : (Boolean cond) : xs) ->
+      Machine.setRuntime $ if cond then a:xs else b:xs
+    _ -> Machine.raise $ Machine.TypeError "Invalid state for choice operation"
 
 -- TODO
 --
