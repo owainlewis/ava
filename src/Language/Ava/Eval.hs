@@ -46,6 +46,11 @@ evaluate (IfStmt cond pos neg) = do
              else mapM_ evaluate neg
       _ ->
           noop
+-- evaluate (Word "apply") = do
+--     xs <- getRuntime
+--     case xs of
+--         (Vector ys:xs) -> setRuntime (ys ++ xs)
+--         _              -> noop
 evaluate (Word w) = do
     -- First we need to check in the current vm env to see if
     -- a user has defined the value of a word w to be some procedure p
