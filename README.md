@@ -75,8 +75,9 @@ Seven aims to introduce a type system to a forth/joy like stack language.
 
 ### Language Primatives
 
-* Lists
-* Strings
+* Blocks { }
+* Lists [ ]
+* Strings ""
 * Numbers
-* Procedures
-* Variables
+* Procedures (define foo ( ) @doc { ... })
+* Variables { let x = 10 }
