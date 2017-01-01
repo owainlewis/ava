@@ -19,7 +19,7 @@ import           Control.Monad.State
 import           Language.Ava.AST
 import           Language.Ava.Machine
 
-import qualified Language.Ava.Std.Base as Std
+import qualified Language.Ava.Core as Core
 
 import qualified Data.Map              as M
 
@@ -55,7 +55,7 @@ evaluate (Word w) = do
         Just procedure -> mapM_ evaluate procedure
         -- Else lookup in the symbol table
         Nothing ->
-            case (M.lookup w Std.symTab) of
+            case (M.lookup w Core.language) of
                 Just procedure ->
                     procedure
                 Nothing -> do

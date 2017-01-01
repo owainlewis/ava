@@ -150,7 +150,7 @@ choice = do
   case runtime of
     (b : a : (Boolean cond) : xs) ->
       Machine.setRuntime $ if cond then a:xs else b:xs
-    _ -> Machine.raise $ Machine.TypeError "Invalid state for choice operation"
+    _ -> Machine.raise $ Machine.TypeError "Invalid state for choice operatio"
 
 -- TODO
 --

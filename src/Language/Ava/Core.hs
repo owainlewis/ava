@@ -1,22 +1,36 @@
-module Language.Ava.Core where
+module Language.Ava.Core
+    (language)
+    where
 
 import           Control.Monad.State
 import qualified Data.Map             as M
 import           Language.Ava.AST
 import qualified Language.Ava.Machine as Machine
 
+type VMState = Machine.VM ()
+
 -- | Towards a smaller core language (mostly derived from Joy)
-languageCore = M.fromList
+language :: M.Map String VMState
+language = M.fromList
     [ ("unstack", Machine.noop)
-    , ("choice", Machine.noop)
+    , ("choice", choice)
     , ("uncons", Machine.noop)
     , ("infra", Machine.noop)
     , ("stack", Machine.noop)
     , ("swap", swap)
     , ("cons", Machine.noop)
-    , ("dup", Machine.noop)
+    , ("dup", dup)
     , ("pop", pop)
+    , (">", binOpBoolean(>))
+    , ("<", binOpBoolean(>))
+    , ("==", binOpBoolean(==))
+    , (":debug", debug)
     ]
+
+debug :: Machine.VM ()
+debug = do
+    rt <- Machine.getRuntime
+    liftIO . print $ rt
 
 -- The stack can be pushed as a quotation onto the stack by stack
 stack :: Machine.VM ()
@@ -59,6 +73,26 @@ pop :: Machine.VM ()
 pop = Machine.modifyRuntime f
     where f []     = []
           f (x:xs) = xs
+
+-- Selects one of two possible outcomes
+--
+-- X Y B CHOICE == (X | Y)
+choice :: Machine.VM ()
+choice = do
+  runtime <- Machine.getRuntime
+  case runtime of
+    (y : x : (Boolean cond) : xs) ->
+      Machine.setRuntime $ if cond then x : xs else y : xs
+    _ -> Machine.raise $ Machine.TypeError "Invalid types for operation: choice"
+
+-- | Utility for constructing binary operations that return a boolean value
+--
+binOpBoolean :: (Value -> Value -> Bool) -> Machine.VM ()
+binOpBoolean op = do
+    Machine.withArity 2
+    x <- Machine.pop
+    y <- Machine.pop
+    Machine.push $ Boolean (x `op` y)
 
 ------------------------------------------
 -- | Types

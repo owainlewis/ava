@@ -80,8 +80,8 @@ parseIfElseStmt = do
     conse <- manyTill parseExpr (Lexer.reserved "end")
     return $ IfStmt cond ant conse
 
-parseBlock :: Parser AST.Value
-parseBlock = (\xs -> Block xs) <$> (Lexer.braces $ many parseExpr)
+parseQuotation :: Parser AST.Value
+parseQuotation = (\xs -> Quotation xs) <$> (Lexer.braces $ many parseExpr)
 
 parseLetStmt :: Parser AST.Value
 parseLetStmt = do
@@ -112,7 +112,7 @@ parseProcedure =
 parseExpr :: Parser AST.Value
 parseExpr = try parseNumber
         <|> parseProcedure
-        <|> parseBlock
+        <|> parseQuotation
         <|> parseString
         <|> parseVector
         <|> parseBoolean
