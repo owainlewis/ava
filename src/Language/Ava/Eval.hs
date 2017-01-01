@@ -4,7 +4,7 @@
 --
 -- License     : BSD-style
 -- Maintainer  : owain@owainlewis.com
--- Stability   : experimental
+-- Stability   : experimenotal
 -- Portability : GHC
 --
 --
@@ -34,6 +34,7 @@ evaluate (Float n)     = push $ Float n
 evaluate (Vector xs)   = push $ Vector xs
 evaluate (Boolean b)   = push $ Boolean b
 evaluate (String s)    = push $ String s
+evaluate (Quotation xs)    = push $ Quotation xs
 evaluate (LetStmt k v) = setVar k v
 evaluate (IfStmt cond pos neg) = do
     outcome <- mapM_ evaluate cond
@@ -64,7 +65,7 @@ evaluate (Word w) = do
                       Nothing ->
                           raise $ RuntimeException ("Unbound word " ++ w)
 -- | Evaluate a procedure by updating the environment
-evaluate (Procedure p instrs) = setProcedure p instrs
+evaluate (Procedure p instrs _) = setProcedure p instrs
 
 -- | Works like eval but doesn't require an initial input state
 --

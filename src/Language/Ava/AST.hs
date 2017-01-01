@@ -23,7 +23,8 @@ data Value = Word! String
            | Boolean! Bool
            | LetStmt! String Value
            | IfStmt! [Value] [Value] [Value]
-           | Procedure! String [Value] (Maybe String)
+           | Quotation [Value]
+           | Procedure! String [Value] (Maybe String) -- An optional documentation string
            deriving ( Show )
 
 instance Eq Value where
@@ -35,6 +36,7 @@ instance Eq Value where
   (Boolean x)       == (Boolean y)       = x == y
   (LetStmt k1 v1)   == (LetStmt k2 v2)   = k1 == k2 && v1 == v2
   (IfStmt x1 y1 z1) == (IfStmt x2 y2 z2) = x1 == x2 && y1 == y2 && z1 == z2
+  (Quotation xs)        == (Quotation ys)        = xs == ys
   (Procedure x1 y1 _) == (Procedure x2 y2 _) = x1 == x2 && y1 == y2
   x                 == y                 = False
 
@@ -47,6 +49,7 @@ instance Ord Value where
   (Boolean x)       `compare` (Boolean y)       = x  `compare` y
   (LetStmt k1 v1)   `compare` (LetStmt k2 v2)   = k1 `compare` k2
   (IfStmt x1 y1 z1) `compare` (IfStmt x2 y2 z2) = x1 `compare` x2
+  (Quotation xs)        `compare` (Quotation ys)        = xs `compare` ys
   (Procedure x1 y1 _) `compare` (Procedure x2 y2 _) = x1 `compare` x2
 
 isWord :: Value -> Bool

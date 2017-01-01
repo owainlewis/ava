@@ -1,0 +1,212 @@
+DEFINE
+
+(* ===== Stack manipulation operators ===== *)
+
+    newstack == [] unstack ;
+    dup2     == dup [[dup] dip swap] dip ;
+    rollup   == swap [swap] dip ; # [S | x y z] => [S | z x y]
+    rolldown == [swap] dip swap ; # [S | x y z] => [S | y z x]
+    rotate   == rollup swap ;     # [S | x y z] => [S | z y x]
+    popd     == [pop] dip ;
+    dupd     == [dup] dip ;
+    swapd    == [swap] dip ;
+    pop2     == pop pop ;
+    popop    == pop2 ;
+
+(* ===== General combinators ===== *)
+    (* We could use 'dup dip pop' to define i as exmplained in
+       "Mathematical Foundation of Joy", but it is not efficient
+       as the straighforward definition. *)
+    i        == stack cdr swap infra unstack ;
+    dip      == stack cddr swap infra cons unstack ;
+    dipd     == [dip] cons dip ;
+    dipdd    == [dipd] cons dip ;
+    nullary  == stack cdr swap infra car ;
+    unary    == stack cdr swap infra car popd ;
+    branch   == choice i ;
+    ifte     == [[stack] dip infra car] dipd branch ;
+    app1     == i ;
+    app2     == dup rollup i [i] dip ;
+    app3     == dup rollup i [app2] dip ;
+    i2       == [dip] dip i ;
+    shunt    == [swons] step ; # See literature for description
+    (* The definition 'b == concat i' is elegant, but it is also
+       costly (I think? TODO: check). *)
+    b == [i] dip i ;
+    cleave == [nullary] dip swap [nullary] dip swap ;
+    k == [pop] dip i ;
+    w == [dup] dip i ;
+    c == [swap] dip i ;
+
+    (* [S | L [P]] : Step through the list L, unconsing the first
+       element, placing it on the top S and executing the quoted
+       program P. *)
+    step ==
+        [pop null]
+        [pop pop]
+        [[uncons] dip dup dipd]
+        tailrec ;
+
+    (* [S | I [P]] :: Execute quoted program P I times. *)
+    times ==
+        swap
+        [0 <=]
+        [pop pop]
+        [pred [dup dip] dip]
+        tailrec ;
+
+(* ===== List operators ===== *)
+    car      == uncons pop ;
+    cdr      == unswons pop ;
+    cddr     == cdr  cdr ;
+    cadr     == cdr  car ;
+    caddr    == cddr car ;
+    first    == car ;
+    second   == cadr ;
+    third    == caddr ;
+    rest     == cdr ;
+    leaf     == list not ;
+    quote    == [] cons ;
+    unpair   == uncons uncons pop ;
+    pairlist == [] cons cons ;
+    concat   == swap swoncat ;
+    swoncat  == reverse shunt ;
+    swons    == swap cons ;
+    unswons  == uncons swap ;
+    null     == [list] [[] =] [0 =] ifte ;
+    nulld    == [null] dip ;
+    consd    == [cons] dip ;
+    swonsd   == [swons] dip ;
+    unconsd  == [uncons] dip ;
+    unswonsd == [unswons] dip unswons swapd ;
+    null2    == nulld null or ;
+    cons2    == swapd cons consd ;
+    uncons2  == unconsd uncons swapd ;
+    swons2   == swapd swons swonsd ;
+    zip ==
+        [null2]
+        [pop pop []]
+        [uncons2]
+        [[pairlist] dip cons]
+        linrec ;
+    sum     == 0 swap [+       ] step ;
+    product == 1 swap [*       ] step ;
+    size    == 0 swap [pop succ] step ;
+    size2   == 0 swap [size +  ] step ; # two levels of nesting
+
+    (* reverse the aggregate on top of the stack *)
+    reverse == [] swap [swons] step ;
+
+    (* [S | L V O] => [S | V'], where L is a list, V is an initial
+       value, and O is a quoted binary operator. *)
+    fold == swapd step ;
+
+    (* [S | L P] => [S | B], where B is true if applying the predicate
+       P to each element of L produces true, otherwise false.  It does
+       not short-circuit. *)
+    every == [i and] cons true fold ;
+    all   == every ;            # reference name
+
+    (* [S | L P] => [S | B], where B is true if applying the predicate
+       P to any element of L produces true, otherwise false.  It does
+       not short-circuit. *)
+    any   == [i or] cons false fold ;
+    some  == any ;              # reference name
+
+    (* Treat each element of an aggregate as a new stack, and apply
+       the given unary operator to it, resulting in a new aggregate
+       of the results *)
+    map ==
+        []                      # initialize accumulator
+        [pop pop null]
+        [rollup pop pop]
+        [[unswons [] cons] dipd # pull out first and create new list
+         dupd [infra] dipd      # exec copy of quotation on this
+         rolldown car swons]    # add it to accumulator
+        tailrec
+        reverse ;
+
+    (* [S | L L' O] => [S | L''] where L'' is the list resulting from
+       applying the binary operator O to respective pairs of elements
+       from L and L'.  L'' is the same length as the shortest of L and
+       L'. *)
+    map2 ==
+        []                      # initialize accumulator
+        [pop pop null2]
+        [[pop pop pop] dip]      # Remove operator, L, and L'
+        [[[unswons] dipd swapd  # pull out first of L
+          [unswons [] cons] dipd # pull out first of L'
+          swonsd                 # make a list of the two
+          dup [infra] dip]       # exec copy of quotation on this
+         dip
+         rolldown car swons]    # add it to accumulator
+        tailrec
+        reverse ;
+
+    (* [S | L L'] => [S | B], where B is true if every element of list
+       L compares equal to each respective element of L', otherwise
+       false. *)
+    equal ==
+      [[size] app2 =]
+      [ true [[[list] app2] [equal] [=] ifte] fold ]
+      [false]
+      ifte ;
+
+    (* [S | L I] -> [S | L'] where L' is L with I elements removed
+       from the front. *)
+    drop ==
+        [0 <=]
+        [pop]
+        [pred [cdr] dip]
+        tailrec ;
+    (* [S | L I] -> [S | L'] where L' is the first I items of L. *)
+    take ==
+        [] rollup               # initialize accumulator
+        [0 <=]
+        [pop pop reverse]
+        [pred [uncons] dip [swons] dipd]
+        tailrec ;
+
+    (* fold == swapd step ; *)
+    at == drop car ;
+    of == swap at ;
+
+
+(* ===== Boolean and Mathematic operators ===== *)
+    pred  == 1 - ;
+    succ  == 1 + ;
+    true  == [true] car ;
+    false == [false] car ;
+    >=    == dup2 > [=] dip or ;
+    <=    == dup2 < [=] dip or ;
+    !=    == = not ;
+    or    == [pop true] [] branch ;
+    and   == [] [pop false] branch ;
+    not   == false true choice ;
+    xor   == dup2 or rollup and not and ;
+    max   == dup2 > rollup choice ;
+    min   == dup2 < rollup choice ;
+    sign  == [0 >] [1] [[0 <] [-1] [0] ifte] ifte ;
+    (* [S | Y X] -> [S | D M] where Y = D*X + M *)
+    divmod ==
+        [0] rollup              # initialize marker list
+        [<]                     # When Y < X
+        [pop swap]              # Remove X, bring markers to front
+        [dup [-] dip            # Recurse with Y<-Y-X ...
+         [1 swons] dipd]        #  and mark
+        [[+] infra]             # Accumulate division markers
+        linrec                  # [S | M [D]]
+        car swap ;              # [S | D M]
+    / == divmod pop ;
+    % == divmod swap pop ;
+    * ==                        # WARNING: Only for positive integers
+        dup2 min [max] dip      # Put the larger number on top
+        [0 =]
+        [pop pop 0]
+        [pred dupd]
+        [+]
+        linrec ;
+    exp ==
+        [0 =]
+        [pop pop 1]
+        [pred dupd]
