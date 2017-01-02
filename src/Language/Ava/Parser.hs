@@ -14,12 +14,15 @@ module Language.Ava.Parser
     , parseFloat
     , parseBoolean
     , parseString
-    , parseVector
+    , parseList
     , parseWord
     , parseIfStmt
     , parseIfElseStmt
-    , readExpr
+    , parseLetStmt
+    , parseProcedure
+    , parseQuotation
     , parseMany
+    , readExpr
     ) where
 
 import           Text.Parsec
@@ -59,8 +62,8 @@ parseBoolean = parseTrue <|> parseFalse
 parseString :: Parser AST.Value
 parseString = AST.String . T.unpack <$> Lexer.stringLiteral
 
-parseVector :: Parser AST.Value
-parseVector = Vector <$>  Lexer.brackets (Lexer.commaSep parseExpr)
+parseList :: Parser AST.Value
+parseList = List <$>  Lexer.brackets (Lexer.commaSep parseExpr)
 
 -- if { 20 double 40 = }
 --   "Hello, World!" print
@@ -87,7 +90,7 @@ parseLetStmt :: Parser AST.Value
 parseLetStmt = do
     Lexer.reserved "let"
     ident <- Lexer.identifier
-    string "="
+    string "=" <* spaces
     value <- parseExpr
     return $ LetStmt (T.unpack ident) value
 
@@ -97,7 +100,7 @@ parseWord = Word . T.unpack <$> Lexer.identifier
 parseProcedure :: Parser Value
 parseProcedure =
   let docString = T.unpack <$> (string "@doc" <* spaces >> Lexer.stringLiteral) in
-    do
+  do
       try $ string "function" <* spaces
       -- The definition name
       p <- Lexer.identifier
@@ -112,10 +115,10 @@ parseProcedure =
 parseExpr :: Parser AST.Value
 parseExpr = try parseNumber
         <|> parseProcedure
+        <|> parseLetStmt
         <|> parseQuotation
         <|> parseString
-        <|> parseVector
+        <|> parseList
         <|> parseBoolean
-        <|> parseLetStmt
         <|> (try parseIfElseStmt <|> parseIfStmt)
         <|> parseWord

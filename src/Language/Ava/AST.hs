@@ -18,7 +18,7 @@ import           Data.Monoid ((<>))
 data Value = Word! String
            | Integer! Int
            | Float! Double
-           | Vector! [Value]
+           | List! [Value]
            | String! String
            | Boolean! Bool
            | LetStmt! String Value
@@ -31,7 +31,7 @@ instance Eq Value where
   (Word x)          == (Word y)          = x == y
   (Integer x)       == (Integer y)       = x == y
   (Float x)         == (Float y)         = x == y
-  (Vector xs)       == (Vector ys)       = xs == ys
+  (List xs)       == (List ys)       = xs == ys
   (String x)        == (String y)        = x == y
   (Boolean x)       == (Boolean y)       = x == y
   (LetStmt k1 v1)   == (LetStmt k2 v2)   = k1 == k2 && v1 == v2
@@ -44,7 +44,7 @@ instance Ord Value where
   (Word x)          `compare` (Word y)          = x  `compare` y
   (Integer x)       `compare` (Integer y)       = x  `compare` y
   (Float x)         `compare` (Float y)         = x  `compare` y
-  (Vector xs)       `compare` (Vector ys)       = xs `compare` ys
+  (List xs)       `compare` (List ys)       = xs `compare` ys
   (String x)        `compare` (String y)        = x  `compare` y
   (Boolean x)       `compare` (Boolean y)       = x  `compare` y
   (LetStmt k1 v1)   `compare` (LetStmt k2 v2)   = k1 `compare` k2
@@ -64,9 +64,9 @@ isFloat :: Value -> Bool
 isFloat (Float _) = True
 isFloat _         = False
 
-isVector :: Value -> Bool
-isVector (Vector _) = True
-isVector _          = False
+isList :: Value -> Bool
+isList (List _) = True
+isList _          = False
 
 isString :: Value -> Bool
 isString (String _) = True

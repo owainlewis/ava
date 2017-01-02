@@ -9,28 +9,28 @@ import qualified Language.Ava.Machine as Machine
 
 type VMState = Machine.VM ()
 
--- | Towards a smaller core language (mostly derived from Joy)
 language :: M.Map String VMState
-language = M.fromList
-    [ ("unstack", Machine.noop)
-    , ("choice", choice)
-    , ("uncons", Machine.noop)
+language = M.union core internal
+
+-- | Towards a smaller core language (mostly derived from Joy)
+core :: M.Map String VMState
+core = M.fromList
+    [ ("choice", choice)
     , ("infra", Machine.noop)
     , ("stack", Machine.noop)
+    , ("unstack", unstack)
+    , ("cons", cons)
+    , ("uncons", Machine.noop)
     , ("swap", swap)
-    , ("cons", Machine.noop)
     , ("dup", dup)
     , ("pop", pop)
-    , (">", binOpBoolean(>))
-    , ("<", binOpBoolean(>))
-    , ("==", binOpBoolean(==))
-    , (":debug", debug)
+    , (">", gt)
+    , ("<", lt)
+    , ("=", eq)
+    , ("+", plus)
+    , ("-", minus)
+    , ("*", times)
     ]
-
-debug :: Machine.VM ()
-debug = do
-    rt <- Machine.getRuntime
-    liftIO . print $ rt
 
 -- The stack can be pushed as a quotation onto the stack by stack
 stack :: Machine.VM ()
@@ -64,6 +64,18 @@ dup :: Machine.VM ()
 dup = Machine.modifyRuntime f
     where f (x:xs) = (x : x : xs)
           f []     = []
+
+-- Cons an element onto a list or quotation
+--
+-- B [A] cons == [B A]
+--
+cons :: Machine.VM ()
+cons = do
+    runtime <- Machine.getRuntime
+    case runtime of
+      (x : Quotation xs : ys) -> Machine.setRuntime $ (Quotation (x : xs)) : ys
+      (x : List xs : ys) -> Machine.setRuntime $ (List (x : xs)) : ys
+      _                    -> Machine.raise $ Machine.TypeError "Cannot cons type"
 
 -- Remove the first item on the stack
 --
@@ -108,32 +120,48 @@ binOpBoolean op = do
 -- Map {:k v}
 
 ------------------------------------------
--- Core
+-- Math
 ------------------------------------------
+
+-- + : X Y -> Z
+-- Add two integers
+plus = binOp (+)
+
+-- - : X Y -> Z
+-- Subtract Y from X
+minus = binOp (-)
+
+-- * : X Y -> Z
+-- Multiply two integers
+times = binOp(*)
+
+-- | Apply a binary operation to two elements on the stack
+--
+binOp :: (Int -> Int -> Int) -> Machine.VM ()
+binOp op = do
+    Machine.withArity 2
+    x <- Machine.pop
+    y <- Machine.pop
+    case (x,y) of
+        (Integer x1, Integer y1) ->
+            Machine.push $ Integer (x1 `op` y1)
+        _ -> Machine.raise $ Machine.TypeError "Expecting two integers"
 
 ------------------------------------------
 -- Predicates
 ------------------------------------------
 
--- empty?
-
--- >= : X Y -> B
--- Tests whether X greater than or equal to Y
-
 -- > : X Y -> B
 -- Tests whether X greater than Y
-
--- <= : X Y -> B
--- Tests whether X less than or equal to Y
+gt = binOpBoolean (>)
 
 -- < : X Y -> B
 -- Tests whether X less than Y
+lt = binOpBoolean (<)
 
 -- != : X Y -> B
--- Tests whether X is not equal to Y
-
--- = : X Y -> B
 -- Tests whether X is equal to Y
+eq = binOpBoolean (==)
 
 -- integer? : X -> B
 -- Tests whether X is an integer.
@@ -155,3 +183,16 @@ binOpBoolean op = do
 
 -- map? : X -> B
 -- Tests whether X is a map
+
+
+internal :: M.Map String VMState
+internal = M.fromList
+    [ (":debug", debug)
+    , (":clear", clear)
+    ]
+
+debug :: Machine.VM ()
+debug = (liftIO . print) =<< Machine.getRuntime
+
+clear :: Machine.VM ()
+clear = Machine.setRuntime []

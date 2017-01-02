@@ -31,7 +31,7 @@ evalS p stack = run (forM_ p evaluate) stack
 evaluate :: Value -> VM ()
 evaluate (Integer n)   = push $ Integer n
 evaluate (Float n)     = push $ Float n
-evaluate (Vector xs)   = push $ Vector xs
+evaluate (List xs)   = push $ List xs
 evaluate (Boolean b)   = push $ Boolean b
 evaluate (String s)    = push $ String s
 evaluate (Quotation xs)    = push $ Quotation xs
