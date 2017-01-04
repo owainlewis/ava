@@ -1,3 +1,15 @@
+-- |
+-- Module      : Language.Ava.Core
+-- Copyright   : (c) 2016 Owain Lewis
+--
+-- License     : BSD-style
+-- Maintainer  : owain@owainlewis.com
+-- Stability   : experimental
+-- Portability : GHC
+--
+-- Core language operations that form the base language upon which
+-- everything else is built
+--
 module Language.Ava.Core
     (language)
     where
@@ -16,11 +28,11 @@ language = M.union core internal
 core :: M.Map String VMState
 core = M.fromList
     [ ("choice", choice)
-    , ("infra", Machine.noop)
-    , ("stack", Machine.noop)
+    , ("infra", infra)
+    , ("stack", stack)
     , ("unstack", unstack)
     , ("cons", cons)
-    , ("uncons", Machine.noop)
+    , ("uncons", uncons)
     , ("swap", swap)
     , ("dup", dup)
     , ("pop", pop)
@@ -31,6 +43,21 @@ core = M.fromList
     , ("-", minus)
     , ("*", times)
     ]
+
+-- Selects one of two possible outcomes
+--
+-- X Y B CHOICE == (X | Y)
+choice :: Machine.VM ()
+choice = do
+  runtime <- Machine.getRuntime
+  case runtime of
+    (y : x : (Boolean cond) : xs) ->
+      Machine.setRuntime $ if cond then x : xs else y : xs
+    _ -> Machine.raise $ Machine.TypeError "Invalid state for operation `choice`"
+
+
+infra :: Machine.VM ()
+infra = Machine.noop
 
 -- The stack can be pushed as a quotation onto the stack by stack
 stack :: Machine.VM ()
@@ -43,7 +70,7 @@ unstack = do
     runtime <- Machine.getRuntime
     case runtime of
       (Quotation xs) : ys -> Machine.setRuntime xs
-      _ -> Machine.raise $ Machine.TypeError "Cannot unstack this type"
+      _ -> Machine.raise $ Machine.TypeError "Invalid state for operation: `unstack`"
 
 -- Swap the first two items on the stack
 --
@@ -75,7 +102,11 @@ cons = do
     case runtime of
       (x : Quotation xs : ys) -> Machine.setRuntime $ (Quotation (x : xs)) : ys
       (x : List xs : ys) -> Machine.setRuntime $ (List (x : xs)) : ys
-      _                    -> Machine.raise $ Machine.TypeError "Cannot cons type"
+      _                    -> Machine.raise $ Machine.TypeError msg
+          where msg = "Invalid state for operation: `cons`"
+
+uncons :: Machine.VM ()
+uncons = Machine.noop
 
 -- Remove the first item on the stack
 --
@@ -85,17 +116,6 @@ pop :: Machine.VM ()
 pop = Machine.modifyRuntime f
     where f []     = []
           f (x:xs) = xs
-
--- Selects one of two possible outcomes
---
--- X Y B CHOICE == (X | Y)
-choice :: Machine.VM ()
-choice = do
-  runtime <- Machine.getRuntime
-  case runtime of
-    (y : x : (Boolean cond) : xs) ->
-      Machine.setRuntime $ if cond then x : xs else y : xs
-    _ -> Machine.raise $ Machine.TypeError "Invalid types for operation: choice"
 
 -- | Utility for constructing binary operations that return a boolean value
 --
@@ -145,11 +165,14 @@ binOp op = do
     case (x,y) of
         (Integer x1, Integer y1) ->
             Machine.push $ Integer (x1 `op` y1)
-        _ -> Machine.raise $ Machine.TypeError "Expecting two integers"
+        _ -> Machine.raise $ Machine.TypeError msg
+        where msg = "Invalid state for binary operation. Expecting two integers"
 
 ------------------------------------------
 -- Predicates
 ------------------------------------------
+
+gt, lt, eq :: Machine.VM ()
 
 -- > : X Y -> B
 -- Tests whether X greater than Y
@@ -184,15 +207,26 @@ eq = binOpBoolean (==)
 -- map? : X -> B
 -- Tests whether X is a map
 
-
 internal :: M.Map String VMState
 internal = M.fromList
     [ (":debug", debug)
     , (":clear", clear)
+    , (":procs", procs)
+    , (":vars", vars)
     ]
 
+procs :: Machine.VM ()
+procs = (liftIO . print) =<< Machine.getProcedureNames
+
+vars :: Machine.VM ()
+vars = (liftIO . print) =<< Machine.getVarNames
+
+-- | Dumps the current stack state and inspect the current state
+--
 debug :: Machine.VM ()
 debug = (liftIO . print) =<< Machine.getRuntime
 
+-- | Flush the current runtime
+--
 clear :: Machine.VM ()
 clear = Machine.setRuntime []

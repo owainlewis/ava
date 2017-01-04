@@ -29,23 +29,24 @@ evalS :: [Value] -> Stack -> IO (Either ProgramError (), Stack)
 evalS p stack = run (forM_ p evaluate) stack
 
 evaluate :: Value -> VM ()
-evaluate (Integer n)   = push $ Integer n
-evaluate (Float n)     = push $ Float n
-evaluate (List xs)   = push $ List xs
-evaluate (Boolean b)   = push $ Boolean b
-evaluate (String s)    = push $ String s
-evaluate (Quotation xs)    = push $ Quotation xs
-evaluate (LetStmt k v) = setVar k v
-evaluate (IfStmt cond pos neg) = do
-    outcome <- mapM_ evaluate cond
-    runtime <- getRuntime
-    case runtime of
-      (Boolean b:xs) -> do
-        setRuntime xs
-        if b then mapM_ evaluate pos
-             else mapM_ evaluate neg
-      _ ->
-          noop
+evaluate (Integer n)           = push $ Integer n
+evaluate (Float n)             = push $ Float n
+evaluate (List xs)             = push $ List xs
+evaluate (Boolean b)           = push $ Boolean b
+evaluate (String s)            = push $ String s
+evaluate (Quotation xs)        = push $ Quotation xs
+evaluate (LetStmt k v)         = setVar k v
+evaluate (IfStmt cond pos neg) =
+    do
+        outcome <- mapM_ evaluate cond
+        runtime <- getRuntime
+        case runtime of
+          (Boolean b:xs) -> do
+            setRuntime xs
+            if b then mapM_ evaluate pos
+                 else mapM_ evaluate neg
+          _ ->
+              noop
 evaluate (Word w) = do
     -- First we need to check in the current vm env to see if
     -- a user has defined the value of a word w to be some procedure p

@@ -48,12 +48,22 @@ instance Show ProgramError where
   show (RuntimeException e) = e
   show (TypeError e)        = e
 
+-- | This is used to check if a key is already set. For example, we need to check
+--   for collisions between vars and procedure names
+isUniqueKey :: String -> VM Bool
+isUniqueKey k = do
+  p <- getProcedure k
+  v <- getVar k
+  case (p, v) of
+    (Nothing, Nothing) -> pure True
+    _ -> pure False
+
 raise :: ProgramError -> VM ()
 raise err =
-    let printio = liftIO . print in
+    let printIO = liftIO . print in
     do
-        printio "=== Exception ==="
-        printio $ show err
+        printIO "=== Exception ==="
+        printIO $ show err
         throwError err
 
 withArity :: Int -> VM ()
@@ -89,6 +99,11 @@ setProcedure k v = procedures %= M.insert k v
 getProcedure :: String -> VM (Maybe [Value])
 getProcedure k = M.lookup k <$> use procedures
 
+-- | Get a list of all the defined procedure names
+--
+getProcedureNames :: VM [String]
+getProcedureNames = M.keys <$> use procedures
+
 -- | Insert a sequence of operations into the current VM procedures map
 --
 setVar :: String -> Value -> VM ()
@@ -98,6 +113,11 @@ setVar k v = vars %= M.insert k v
 --
 getVar :: String -> VM (Maybe Value)
 getVar k = M.lookup k <$> use vars
+
+-- Get a list of all the defined variable names
+--
+getVarNames :: VM [String]
+getVarNames = M.keys <$> use vars
 
 -- Fetch the runtime state
 --

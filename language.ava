@@ -1,0 +1,3 @@
+function newstack @doc "Flush the current stack, setting it to be empty" {
+  [] unstack
+}

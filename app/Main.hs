@@ -14,6 +14,15 @@ import           System.IO            (hFlush, stdout)
 import qualified Data.Text            as T
 import qualified Data.Text.IO         as TextIO
 
+loadLibWithContext context path = do
+  contents <- TextIO.readFile path
+  case (Parser.parseMany contents) of
+      Right program -> do
+          (outcome, stack) <- Eval.evalS program context
+          return $ Just stack
+      Left err ->
+          return $ Nothing
+
 -- | Run a (R)ead (E)val (P)rint (L)oop top level starting with an empty state
 --
 repl :: IO ()
@@ -25,7 +34,11 @@ repl =
               ] in
   do
     mapM_ putStrLn intro
-    runRepl (Machine.Stack [] (M.empty) (M.empty))
+    let initialState = (Machine.Stack [] (M.empty) (M.empty))
+    stateWithStdLoaded <- loadLibWithContext initialState "language.ava"
+    case stateWithStdLoaded of
+      Just stack -> runRepl stack
+      Nothing -> error "Failed to load standard lib"
 
 -- | Run the REPL loop providing the current state of the world
 runRepl :: Machine.Stack ->  IO ()
@@ -34,7 +47,7 @@ runRepl stackState = do
     hFlush stdout
     ln <- TextIO.getLine
     hFlush stdout
-    if ln == "exit()"
+    if ln == ":exit"
       then return ()
       else
         case (Parser.parseMany ln) of
