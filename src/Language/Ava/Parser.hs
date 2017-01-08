@@ -99,7 +99,7 @@ parseWord = Word . T.unpack <$> Lexer.identifier
 
 parseProcedure :: Parser Value
 parseProcedure =
-  let docString = T.unpack <$> (string "@doc" <* spaces >> Lexer.stringLiteral) in
+  let docString = T.unpack <$> Lexer.stringLiteral in
   do
       try $ string "function" <* spaces
       -- The definition name

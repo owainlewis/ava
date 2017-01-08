@@ -1,3 +1,17 @@
-function newstack @doc "Flush the current stack, setting it to be empty" {
-  [] unstack
+function newstack (void)
+  "Create a new stack by replacing the current stack with an empty quotation"
+{
+  {} unstack
 }
+
+function quote (a -> {a}) {
+  {} cons
+}
+
+function swons   { swap cons }
+function unswons { uncons swap }
+function car     { uncons pop } 
+function cdr     { unswons pop }
+
+let first = car
+let rest = cdr

@@ -134,6 +134,11 @@ setRuntime xs = runtime .= xs
 modifyRuntime :: ([Value] -> [Value]) -> VM ()
 modifyRuntime f = setRuntime . f =<< getRuntime
 
+-- | Get the current VM stack
+--
+getStack :: VM Stack
+getStack = get
+
 -- | Run a series of steps on the stack
 --
 -- λ> (run debug (Stack [Number 10] M.empty)) >>= (\_ -> return ())

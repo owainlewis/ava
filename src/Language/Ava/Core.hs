@@ -16,10 +16,16 @@ module Language.Ava.Core
 
 import           Control.Monad.State
 import qualified Data.Map             as M
+import           Data.Monoid          ((<>))
 import           Language.Ava.AST
 import qualified Language.Ava.Machine as Machine
 
 type VMState = Machine.VM ()
+
+-- | Helper to ensure that error messages are consistent
+--
+stateError :: String -> String
+stateError op = "Invalid state for operation `" <> op <> "`"
 
 language :: M.Map String VMState
 language = M.union core internal
@@ -53,15 +59,26 @@ choice = do
   case runtime of
     (y : x : (Boolean cond) : xs) ->
       Machine.setRuntime $ if cond then x : xs else y : xs
-    _ -> Machine.raise $ Machine.TypeError "Invalid state for operation `choice`"
+    _ -> Machine.raise $ Machine.TypeError (stateError "choice")
 
 
+-- | Final todo
+-- You want the infra combinator, I think.
+-- It expects a list and above that a quotation.
+-- It then treats the list as a temporary stack and executes the quotation on that.
+-- More often than not the list that is supplied is actually an empty list. Example:
+--
+--  [] [2 3 + 4 5 *] infra
+--
+-- [5 20]
+--
 infra :: Machine.VM ()
 infra = Machine.noop
 
 -- The stack can be pushed as a quotation onto the stack by stack
 stack :: Machine.VM ()
-stack = Machine.noop
+stack = f =<< Machine.getRuntime
+    where f = (\x -> Machine.setRuntime $ [Quotation x])
 
 -- A quotation can be turned into the stack with unstack
 --
@@ -70,7 +87,7 @@ unstack = do
     runtime <- Machine.getRuntime
     case runtime of
       (Quotation xs) : ys -> Machine.setRuntime xs
-      _ -> Machine.raise $ Machine.TypeError "Invalid state for operation: `unstack`"
+      _ -> Machine.raise $ Machine.TypeError (stateError "unstack")
 
 -- Swap the first two items on the stack
 --
@@ -100,13 +117,22 @@ cons :: Machine.VM ()
 cons = do
     runtime <- Machine.getRuntime
     case runtime of
+      -- TODO this is pretty fuzzy to me. Do we want a separate type
+      -- how can this stuff be unifed properly ?
       (x : Quotation xs : ys) -> Machine.setRuntime $ (Quotation (x : xs)) : ys
       (x : List xs : ys) -> Machine.setRuntime $ (List (x : xs)) : ys
       _                    -> Machine.raise $ Machine.TypeError msg
-          where msg = "Invalid state for operation: `cons`"
+          where msg = stateError "cons"
 
+-- Uncons ??
+--
 uncons :: Machine.VM ()
-uncons = Machine.noop
+uncons = do
+    runtime <- Machine.getRuntime
+    case runtime of
+      (List (x:xs) : ys) -> Machine.setRuntime $ (List xs) : ([x] ++ ys)
+      _                  -> Machine.raise $ Machine.TypeError msg
+          where msg = stateError "uncons"
 
 -- Remove the first item on the stack
 --

@@ -14,6 +14,9 @@ import           System.IO            (hFlush, stdout)
 import qualified Data.Text            as T
 import qualified Data.Text.IO         as TextIO
 
+loadLibWithContext :: Machine.Stack
+  -> FilePath
+  -> IO (Maybe Machine.Stack)
 loadLibWithContext context path = do
   contents <- TextIO.readFile path
   case (Parser.parseMany contents) of

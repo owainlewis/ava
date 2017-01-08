@@ -26,7 +26,10 @@ import qualified Data.Map              as M
 -- | Executes a program p (a list of operations to perform in sequential order)
 --
 evalS :: [Value] -> Stack -> IO (Either ProgramError (), Stack)
-evalS p stack = run (forM_ p evaluate) stack
+evalS p stack = run (forM_ p f) stack
+    where f e = do
+            liftIO . print $ e
+            evaluate e
 
 evaluate :: Value -> VM ()
 evaluate (Integer n)           = push $ Integer n
@@ -47,6 +50,18 @@ evaluate (IfStmt cond pos neg) =
                  else mapM_ evaluate neg
           _ ->
               noop
+evaluate (Word "infra") = do
+     runtime <- getRuntime
+     case runtime of
+       (x@(Quotation xs) : y@(List ys) : zs) -> do
+           stack <- getStack
+           let modifiedStack = stack { _runtime = ys }
+           outcome <- liftIO (evalS xs modifiedStack)
+           let newRuntime = (\st -> (_runtime st)) <$> outcome
+           -- TODO
+           liftIO . print $ outcome
+           liftIO . print $ newRuntime
+       _ -> raise $ RuntimeException "Unbound state for operation `infra`"
 evaluate (Word w) = do
     -- First we need to check in the current vm env to see if
     -- a user has defined the value of a word w to be some procedure p
@@ -57,8 +72,7 @@ evaluate (Word w) = do
         -- Else lookup in the symbol table
         Nothing ->
             case (M.lookup w Core.language) of
-                Just procedure ->
-                    procedure
+                Just procedure -> id procedure
                 Nothing -> do
                     v <- getVar w
                     case v of
