@@ -23,9 +23,27 @@ data Value = Word! String
            | Boolean! Bool
            | LetStmt! String Value
            | IfStmt! [Value] [Value] [Value]
-           | Quotation [Value]
+           | Quotation! [Value]
            | Procedure! String [Value] (Maybe String) -- An optional documentation string
            deriving ( Show )
+
+-- | Represents a type kind that can be used to do basic type checking
+--
+data TKind =
+    TAny
+  | TInteger
+  | TFloat
+  | TString
+  | TList
+  | TBool
+  | TQuote
+  | TApp
+  deriving ( Eq, Ord, Show )
+
+getTKind :: Value -> TKind
+getTKind (Integer _) = TInteger
+getTKind (Float _) = TFloat
+getTKind (String _) = TString
 
 instance Eq Value where
   (Word x)            == (Word y)              = x == y
