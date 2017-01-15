@@ -71,7 +71,6 @@ bifmap f = fmap . fmap $ f
 
 instance Functor (EitherIO a) where
     fmap f = EitherIO . (bifmap f) . runEitherIO
-
 instance Applicative (EitherIO a) where
     pure = EitherIO . return . Right
     f <*> x = EitherIO $ liftA2 (<*>) (runEitherIO f) (runEitherIO x)
@@ -101,12 +100,16 @@ catchE throwing handler = EitherIO $ do
 
 data ProgramError = Fail
 
---push :: Monad m => a -> [a] -> m (Either b [a])
---push v (Stack runtime p v) = return . Right $ 
+e = Stack [] m m where m = M.empty
+
+push :: AST.Value -> Stack -> IO (Either a Stack)
+push v (Stack s x y) = do
+  print "OK"
+  return . Right $ Stack (v:s) x y
+
 
 --eval (AST.Integer x) (Stack runtime procs vars) =
 --    return . Right $ Stack ()
-
 
 
 
