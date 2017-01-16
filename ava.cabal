@@ -27,7 +27,6 @@ library
                      , containers
                      , parsec
                      , text
-                     , transformers
   default-language:    Haskell2010
 
 executable seven-exe

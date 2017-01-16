@@ -21,10 +21,14 @@ data Value = Word! String
            | List! [Value]
            | String! String
            | Boolean! Bool
+           | Quotation! [Value]
+
+           -- These should be factored out ideally into a separate type
+
            | LetStmt! String Value
            | IfStmt! [Value] [Value] [Value]
-           | Quotation! [Value]
-           | Procedure! String [Value] (Maybe String) -- An optional documentation string
+           | Procedure! String [Value] (Maybe String)
+           -- An optional documentation string
            deriving ( Show )
 
 -- | Represents a type kind that can be used to do basic type checking
@@ -69,27 +73,6 @@ instance Ord Value where
   (IfStmt x1 y1 z1)   `compare` (IfStmt x2 y2 z2)   = x1 `compare` x2
   (Quotation xs)      `compare` (Quotation ys)      = xs `compare` ys
   (Procedure x1 y1 _) `compare` (Procedure x2 y2 _) = x1 `compare` x2
-
--- integer? : X -> B
--- Tests whether X is an integer.
-
--- float? : R -> B
--- Tests whether R is a float.
-
--- char? : X  ->  B
--- Tests whether X is a character.
-
--- string? : X -> B
--- Tests whether X is a string.
-
--- list? : X -> B
--- Tests whether X is a list
-
--- set? : X -> B
--- Tests whether X is a set
-
--- map? : X -> B
--- Tests whether X is a map
 
 isWord :: Value -> Bool
 isWord (Word _) = True
