@@ -1,13 +1,17 @@
 module Language.Ava.Base.Execution
-    (
+    ( PrimOp(..)
+    , Op
+    , Arity
+    , execute
+    , executeF
     ) where
 
 import           Control.Monad.Except
-import           Language.Ava.Base.Stack    (Stack (..))
+import           Language.Ava.Base.Stack (Stack (..))
 
-import qualified Language.Ava.Base.AST      as AST
-import qualified Language.Ava.Base.Stack    as Stack
-import qualified Data.Map as M
+import qualified Data.Map                as M
+import qualified Language.Ava.Base.AST   as AST
+import qualified Language.Ava.Base.Stack as Stack
 
 type Op    = String
 type Arity = Int
@@ -21,7 +25,8 @@ instance Show ProgramError where
   show (InvalidState op) = "Invalid state for operation " ++ op
   show (GenericError e)  = e
 
--- All primative operations
+type App = Stack AST.Value -> ExceptT ProgramError IO (Stack AST.Value)
+
 data PrimOp = TPush AST.Value
             | TPop
             | TDup
@@ -31,52 +36,64 @@ data PrimOp = TPush AST.Value
             | TChoice
             | TStack
             | TUnstack
-            -- | TIf
-            -- | TIfte
+            deriving ( Eq, Show )
 
-std = M.fromList [ ("dup", dup)
-                 ]
+fapply :: PrimOp -> Stack AST.Value -> ExceptT ProgramError IO (Stack AST.Value)
+fapply (TPush v) s = push v s
+fapply TPop s = pop s
+fapply TDup s = dup s
+fapply TSwap s = swap s
+fapply TCons s = cons s
+fapply TUncons s = uncons s
 
-type App = Stack AST.Value -> ExceptT ProgramError IO (Stack AST.Value)
-
-liftedOp :: Monad m => a -> ExceptT e m a
-liftedOp = ExceptT . (return . Right)
+liftOp :: Monad m => a -> ExceptT e m a
+liftOp = ExceptT . (return . Right)
 
 eval :: PrimOp -> Stack AST.Value -> ExceptT ProgramError IO (Stack AST.Value)
-eval TDup s = dup s
+eval TDup s      = dup s
 eval (TPush n) s = (push n) s
 
 push :: Monad m => t -> Stack t -> ExceptT e m (Stack t)
-push v s = liftedOp $ Stack.modify (\s -> v:s) s
-
-dup :: App
-dup s = liftedOp $ Stack.modify f s
-        where f []     = []
-              f (x:xs) = (x:x:xs)
+push v s = liftOp $ Stack.modify (\s -> v:s) s
 
 pop :: App
-pop s = liftedOp $ Stack.modify f s
+pop s = liftOp $ Stack.modify f s
         where f []     = []
               f (x:xs) = xs
 
-swap :: Stack a -> Stack a
-swap s = Stack.modify f s
-    where f []       = []
-          f (x:y:xs) = y:x:xs
-          f (x:xs)   = x:xs
+dup :: App
+dup s = liftOp $ Stack.modify f s
+        where f []     = []
+              f (x:xs) = (x:x:xs)
 
-cons :: Stack AST.Value -> Either ProgramError (Stack AST.Value)
-cons = Stack.modifyM f
-    where f (x : AST.Quotation xs : ys) = return $ (AST.Quotation (x : xs)) : ys
-          f (x : AST.List xs : ys)      = return $ (AST.List (x : xs)) : ys
-          f _                           = Left . InvalidState $ "cons"
+swap :: App
+swap s = liftOp $ Stack.modify f s
+    where f (x:y:xs) = y:x:xs
+          f x        = x
 
-uncons = error
+cons :: App
+cons s = ExceptT . return $ Stack.modifyM f s
+    where f (x : AST.Quotation xs : ys) =
+              return $ (AST.Quotation (x : xs)) : ys
+          f (x : AST.List xs : ys) =
+            return $ (AST.List (x : xs)) : ys
+          f _ = Left . InvalidState $ "cons"
 
-choice = error
+uncons :: App
+uncons s = ExceptT . return $ Stack.modifyM f s
+    where f (AST.Quotation (x:xs) : ys) =
+            return $ x : (AST.Quotation xs) : ys
+          f (AST.List (x:xs) : ys) =
+            return $ x : (AST.List xs) : ys
+          f _ = Left . InvalidState $ "uncons"
 
-stack = error
-unstack = error
+--choice = error
+--stack = error
+--unstack = error
 
 execute :: (Foldable t, Monad m) => a -> t (a -> ExceptT e m a) -> m (Either e a)
 execute s ops = runExceptT (foldM (\s f -> f s) s ops)
+
+executeF :: Foldable t => Stack AST.Value -> t PrimOp ->
+            IO (Either ProgramError (Stack AST.Value))
+executeF s ops = runExceptT (foldM (\s f -> fapply f $ s) s ops)
