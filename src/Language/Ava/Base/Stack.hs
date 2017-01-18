@@ -4,6 +4,7 @@ module Language.Ava.Base.Stack
     , with
     , modify
     , modifyM
+    , getStack
     , getVar
     , setVar
     , getProcedure
@@ -35,13 +36,16 @@ modifyM f (Stack s p v) = do
   state <- f s
   return (Stack state p v)
 
-getVar :: Stack t -> String -> Maybe [t]
+getStack :: Stack a -> [a]
+getStack (Stack xs _ _) = xs
+
+getVar :: Stack a -> String -> Maybe [a]
 getVar (Stack _ _ vs) k = M.lookup k vs
 
 setVar :: Stack a -> String -> [a] -> Stack a
 setVar (Stack s ps vs) k v = Stack s ps (M.insert k v vs)
 
-getProcedure :: String -> Stack t -> Maybe [t]
+getProcedure :: String -> Stack a -> Maybe [a]
 getProcedure k (Stack _ ps _) = M.lookup k ps
 
 setProcedure :: Stack a -> String -> [a] -> Stack a

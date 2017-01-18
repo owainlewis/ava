@@ -16,6 +16,8 @@ import qualified Language.Ava.Base.Stack as Stack
 type Op    = String
 type Arity = Int
 
+-- | **************************************************************************************
+
 data ProgramError = InvalidArity Arity
                   | InvalidState Op
                   | GenericError String
@@ -25,7 +27,11 @@ instance Show ProgramError where
   show (InvalidState op) = "Invalid state for operation " ++ op
   show (GenericError e)  = e
 
+-- | **************************************************************************************
+
 type App = Stack AST.Value -> ExceptT ProgramError IO (Stack AST.Value)
+
+-- | **************************************************************************************
 
 data PrimOp = TPush AST.Value
             | TPop
@@ -36,7 +42,11 @@ data PrimOp = TPush AST.Value
             | TChoice
             | TStack
             | TUnstack
+            -- WIP
+            | TLet
             deriving ( Eq, Show )
+
+-- | **************************************************************************************
 
 fapply :: PrimOp -> Stack AST.Value -> ExceptT ProgramError IO (Stack AST.Value)
 fapply (TPush v) s = push v s
@@ -46,12 +56,16 @@ fapply TSwap s = swap s
 fapply TCons s = cons s
 fapply TUncons s = uncons s
 
+-- | **************************************************************************************
+
 liftOp :: Monad m => a -> ExceptT e m a
 liftOp = ExceptT . (return . Right)
 
 eval :: PrimOp -> Stack AST.Value -> ExceptT ProgramError IO (Stack AST.Value)
 eval TDup s      = dup s
 eval (TPush n) s = (push n) s
+
+-- | **************************************************************************************
 
 push :: Monad m => t -> Stack t -> ExceptT e m (Stack t)
 push v s = liftOp $ Stack.modify (\s -> v:s) s
@@ -88,8 +102,14 @@ uncons s = ExceptT . return $ Stack.modifyM f s
           f _ = Left . InvalidState $ "uncons"
 
 --choice = error
+
 --stack = error
 --unstack = error
+
+-- letOp = case Stack.getStack of
+--           (x:y:xs) -> 
+
+-- | **************************************************************************************
 
 execute :: (Foldable t, Monad m) => a -> t (a -> ExceptT e m a) -> m (Either e a)
 execute s ops = runExceptT (foldM (\s f -> f s) s ops)

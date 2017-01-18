@@ -55,12 +55,8 @@ languageDef = Lang.emptyDef {
   , Token.opLetter = oneOf identTokens
   , Token.identStart = alphaNum <|> oneOf identTokens
   , Token.identLetter = alphaNum
-  , Token.reservedNames = [ "if"
-                          , "else"
-                          , "end"
-                          , "true"
+  , Token.reservedNames = [ "true"
                           , "false"
-                          , "let"
                           ]
   , Token.reservedOpNames = []
   , Token.caseSensitive = True
