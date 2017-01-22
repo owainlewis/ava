@@ -14,12 +14,9 @@ module Language.Ava.Base.Stack
 import qualified Data.Map as M
 
 data Stack a = Stack {
-    -- The current runtime state
     stack      :: [a]
-    -- A map of procedure names to a list of operations
   , procedures :: M.Map String [a]
-    -- A map of variable names to a list of variable values
-  , vars       :: M.Map String [a]
+  , vars       :: M.Map String a
 } deriving ( Eq, Ord, Show )
 
 empty :: Stack a
@@ -39,10 +36,10 @@ modifyM f (Stack s p v) = do
 getStack :: Stack a -> [a]
 getStack (Stack xs _ _) = xs
 
-getVar :: Stack a -> String -> Maybe [a]
+getVar :: Stack a -> String -> Maybe a
 getVar (Stack _ _ vs) k = M.lookup k vs
 
-setVar :: Stack a -> String -> [a] -> Stack a
+setVar :: Stack a -> String -> a -> Stack a
 setVar (Stack s ps vs) k v = Stack s ps (M.insert k v vs)
 
 getProcedure :: String -> Stack a -> Maybe [a]

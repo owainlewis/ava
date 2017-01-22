@@ -56,6 +56,7 @@ fapply TSwap s = swap s
 fapply TCons s = cons s
 fapply TUncons s = uncons s
 fapply TChoice s = choice s
+fapply TLet s = letOp s
 
 -- | *********************************************************************
 
@@ -112,9 +113,12 @@ choice s = ExceptT . return $ Stack.modifyM f s
 --stack = error
 --unstack = error
 
--- letOp = case Stack.getStack of
---           (x:y:xs) ->
-
+letOp :: App
+letOp (Stack s p vs) = ExceptT . return $ do
+    case s of
+        ((AST.Word k) : v : xs) ->
+            Right $ Stack xs p (M.insert k v vs)
+        _ -> Left $ InvalidState "let"
 
 -- | *********************************************************************
 

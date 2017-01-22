@@ -20,6 +20,7 @@ eval (Word "cons")   = TCons
 eval (Word "uncons") = TUncons
 eval (Word "pop")    = TPop
 eval (Word "choice") = TChoice
+eval (Word "let")    = TLet
 
 transformProgram :: T.Text -> [PrimOp]
 transformProgram input =
