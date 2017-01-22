@@ -14,10 +14,12 @@ eval (Float x)       = TPush (Float x)
 eval (String x)      = TPush (String x)
 eval (List x)        = TPush (List x)
 eval (Quotation x)   = TPush (Quotation x)
+eval (Boolean b)     = TPush (Boolean b)
 eval (Word "dup")    = TDup
 eval (Word "cons")   = TCons
 eval (Word "uncons") = TUncons
 eval (Word "pop")    = TPop
+eval (Word "choice") = TChoice
 
 transformProgram :: T.Text -> [PrimOp]
 transformProgram input =
