@@ -9,6 +9,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-- Lex utils
 --
 module Language.Ava.Lexer
     ( lexer
