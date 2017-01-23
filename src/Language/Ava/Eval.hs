@@ -16,23 +16,42 @@ module Language.Ava.Eval
 
 import           Language.Ava.AST
 import           Language.Ava.Execution
+import qualified Language.Ava.Stack as S
 import           Data.Maybe(maybe)
-
 import qualified Data.Map as M
 
--- | A transform operation from Value to PrimOp
+liftO :: Applicative f => a -> f [a]
+liftO x = pure [ x ]
+
+-- Simplify a complex user defined procedure into a sequence of simple
+-- primary operations
 --
---   A Value that returns `Nothing` is a Value that cannot be interpreted
+simplifyProcedure :: [Value] -> Either ProgramError [PrimOp]
+simplifyProcedure p = foldl (\acc v -> let e = eval v in
+                                       case e of
+                                         Left e -> Left e
+                                         Right xs ->
+                                           case acc of
+                                             Left e -> Left e
+                                             Right ys -> Right $ xs ++ ys)
+                                    (Right []) p
+
+
+-- | A transform operation from some value to a sequence of operations
 --
-eval :: Value -> Either ProgramError PrimOp
-eval (Integer x)     = Right (TPush (Integer x))
-eval (Float x)       = Right (TPush (Float x))
-eval (String x)      = Right (TPush (String x))
-eval (List x)        = Right (TPush (List x))
-eval (Quotation x)   = Right (TPush (Quotation x))
-eval (Boolean b)     = Right (TPush (Boolean b))
-eval (Word w)        = maybe (Left $ GenericError "Unbound word")
-                             (\op -> Right op)
+--   A value that returns `Nothing` is a value that cannot be interpreted
+--
+eval :: Value ->
+        Either ProgramError [PrimOp]
+eval (Integer x)      = liftO (TPush (Integer x))
+eval (Float x)        = liftO (TPush (Float x))
+eval (String x)       = liftO (TPush (String x))
+eval (List x)         = liftO (TPush (List x))
+eval (Quotation x)    = liftO (TPush (Quotation x))
+eval (Boolean b)      = liftO (TPush (Boolean b))
+eval (Procedure x xs) = simplifyProcedure xs
+eval (Word w)         = maybe (Left $ GenericError "Unbound word")
+                             (\op -> liftO op)
                              (M.lookup w allWords)
     where allWords = M.fromList [ ("dup", TDup)
                                 , ("cons", TCons)

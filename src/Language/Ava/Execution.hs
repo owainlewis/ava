@@ -14,9 +14,19 @@ import qualified Language.Ava.Stack as Stack
 import           Language.Ava.AST(PrimOp(..), ProgramError(..))
 
 
-execute :: Foldable t => Stack AST.Value -> t PrimOp ->
-            IO (Either ProgramError (Stack AST.Value))
+-- | Execute a sequence of operations in the context of a given stack
+--
+execute :: Foldable t =>
+           Stack AST.Value ->
+           t PrimOp ->
+           IO (Either ProgramError (Stack AST.Value))
 execute s ops = runExceptT (foldM (\s f -> applyOp f $ s) s ops)
 
-execute1 :: (Foldable t, Monad m) => a -> t (a -> ExceptT e m a) -> m (Either e a)
-execute1 s ops = runExceptT (foldM (\s f -> f s) s ops)
+-- Executes a sequence of operations over the empty stack
+--
+execute1
+  :: (Foldable t, Monad m) =>
+     t (Stack a -> ExceptT e m (Stack a)) ->
+     m (Either e (Stack a))
+execute1 ops = runExceptT (foldM (\s f -> f s) s ops)
+                   where s = Stack.empty

@@ -23,11 +23,23 @@ import Data.Maybe(maybe)
 
 import           Language.Ava.Execution
 
+-- The idea here is to take a complex program and reduce it down
+-- into a series of simple operations.
+--
+--
 transformProgram :: T.Text -> Either AST.ProgramError [AST.PrimOp]
 transformProgram input =
     case (Parser.parseMany input) of
-        Right p -> Right []
-        -- TODO fold with eval here 
+        Right p -> foldl (\acc value ->
+                            -- Fail early
+                            case acc of
+                              Left e -> Left e
+                              Right pops ->
+                                case (Eval.eval value) of
+                                  Left e -> Left e
+                                  Right ops -> Right $ acc ++ ops)
+                   (Right [])
+                   p
         Left e  -> Left $ AST.GenericError "Failed to parse program"
 
 run p = let instructions = transformProgram (T.pack p) in

@@ -17,6 +17,8 @@ module Language.Ava.AST
     , ProgramError(..)
     ) where
 
+import Data.Semigroup((<>))
+
 -- | -----------------------------------------------------------
 
 data Value = Word String
@@ -26,6 +28,7 @@ data Value = Word String
            | Boolean Bool
            | List [Value]
            | Quotation [Value]
+           | Procedure String [Value]
            deriving ( Show )
 
 instance Eq Value where
@@ -36,6 +39,7 @@ instance Eq Value where
   (Boolean x)         == (Boolean y)           = x == y
   (List xs)           == (List ys)             = xs == ys
   (Quotation xs)      == (Quotation ys)        = xs == ys
+  (Procedure a xs)    == (Procedure b ys)    = xs == ys
 
 -- | -----------------------------------------------------------
 
@@ -50,7 +54,7 @@ data ProgramError = InvalidArity Arity
 
 instance Show ProgramError where
   show (InvalidArity n)  = "Invalid arity. Expecting {n} arguments"
-  show (InvalidState op) = "Invalid state for operation " ++ op
+  show (InvalidState op) = "Invalid state for operation " <> op
   show (GenericError e)  = e
 
 -- | -----------------------------------------------------------
@@ -68,3 +72,4 @@ data PrimOp = TPush Value
             deriving ( Eq, Show )
 
 -- | -----------------------------------------------------------
+
