@@ -13,7 +13,7 @@
 --
 module Language.Ava.AST
     ( Value(..)
-    , PrimOp(..)
+    , Instruction(..)
     , ProgramError(..)
     ) where
 
@@ -59,17 +59,37 @@ instance Show ProgramError where
 
 -- | -----------------------------------------------------------
 
-data PrimOp = TPush Value
-            | TPop
-            | TDup
-            | TSwap
-            | TCons
-            | TUncons
-            | TChoice
-            | TStack
-            | TUnstack
-            | TLet
-            deriving ( Eq, Show )
+-- These types form the basic low operations for the Ava language.
+--
+-- An instruction can be thought of as a function that takes a stack as an input and returns either an error or a new stack.
+--
+-- There is really only one function type in this language.
+--
+-- @@ instruction :: Stack -k1 > IO ( Either ProgramError Stack ) @@
+--
+-- An operation may or may not perform IO.
+--
+-- Everything else gets re-written into this low level stack machine form
+--
+data Instruction = TPush Value
+                 | TPop
+                 | TDup
+                 | TSwap
+                 | TCons
+                 | TUncons
+                 | TChoice
+                 | TStack
+                 | TUnstack
+                 | TLet
+                 -- Numeric operations
+                 | TMult
+                 | TAdd
+                 | TSub
+                 | TDiv
+                 -- Logical operations
+                 | TGt
+                 | TLt
+                 | TEq
+                 deriving ( Eq, Show )
 
 -- | -----------------------------------------------------------
-

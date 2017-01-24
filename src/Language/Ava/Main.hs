@@ -27,7 +27,7 @@ import           Language.Ava.Execution
 -- into a series of simple operations.
 --
 --
-transformProgram :: T.Text -> Either AST.ProgramError [AST.PrimOp]
+transformProgram :: T.Text -> Either AST.ProgramError [AST.Instruction]
 transformProgram input =
     case (Parser.parseMany input) of
         Right p -> foldl (\acc value ->
@@ -37,14 +37,16 @@ transformProgram input =
                               Right pops ->
                                 case (Eval.eval value) of
                                   Left e -> Left e
-                                  Right ops -> Right $ acc ++ ops)
+                                  Right ops -> Right $ pops ++ ops)
                    (Right [])
                    p
         Left e  -> Left $ AST.GenericError "Failed to parse program"
 
+pReduce1 = transformProgram . T.pack
+
+run :: String -> IO (Either AST.ProgramError (Stack.Stack AST.Value))
 run p = let instructions = transformProgram (T.pack p) in
         case instructions of
-          Left e -> putStrLn "Failed"
-          Right instr -> execute Stack.empty instr >> return ()
-
+            Left e -> return . Left $ e
+            Right ops -> execute Stack.empty ops
 

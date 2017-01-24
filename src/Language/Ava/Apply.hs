@@ -8,7 +8,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
--- Modules here are used to apply some PrimOp value to a stack and return a result.
+-- Modules here are used to apply some Instruction value to a stack and return a result.
 --
 -- These functions make up the core language def
 --
@@ -25,7 +25,10 @@ import qualified Language.Ava.Stack as Stack
 
 -- | -----------------------------------------------------------
 
-applyOp :: AST.PrimOp ->
+-- | Takes an instruction and turns it into a function that can
+--   be applied to a stack
+--
+applyOp :: AST.Instruction ->
            Stack AST.Value ->
            ExceptT AST.ProgramError IO (Stack AST.Value)
 applyOp (AST.TPush v) s = push v s
@@ -44,24 +47,34 @@ liftOp = ExceptT . (return . Right)
 
 -- | -----------------------------------------------------------
 
+-- | Push a value onto the stack
+--
 push :: Monad m => t -> Stack t -> ExceptT e m (Stack t)
 push v s = liftOp $ Stack.modify (\s -> v:s) s
 
+-- | Pop an item off the stack
+--
 pop :: Stack AST.Value -> ExceptT AST.ProgramError IO (Stack AST.Value)
 pop s = liftOp $ Stack.modify f s
         where f []     = []
               f (x:xs) = xs
 
+-- | Duplicate the top item on the stack
+--
 dup :: Stack AST.Value -> ExceptT AST.ProgramError IO (Stack AST.Value)
 dup s = liftOp $ Stack.modify f s
         where f []     = []
               f (x:xs) = (x:x:xs)
 
+-- | Swap the first two elements on the stack
+--
 swap :: Stack AST.Value -> ExceptT AST.ProgramError IO (Stack AST.Value)
 swap s = liftOp $ Stack.modify f s
     where f (x:y:xs) = y:x:xs
           f x        = x
 
+-- | Cons some value onto a list of procedure
+--
 cons :: Stack AST.Value -> ExceptT AST.ProgramError IO (Stack AST.Value)
 cons s = ExceptT . return $ Stack.modifyM f s
     where f (x : AST.Quotation xs : ys) =
