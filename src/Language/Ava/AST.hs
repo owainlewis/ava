@@ -5,7 +5,7 @@
 -- Copyright   : (c) 2016 Owain Lewis
 --
 -- License     : BSD-style
--- Maintainer  : owain@owainlewis.com
+-- Maintainer  : Owain Lewis <owain@owainlewis.com>
 -- Stability   : experimental
 -- Portability : GHC
 --
@@ -20,31 +20,37 @@ module Language.Ava.AST
 import Data.Semigroup((<>))
 
 -- | -----------------------------------------------------------
-
 data Value = Word String
+           | Apply String
            | Integer Int
            | Float Double
            | String String
            | Boolean Bool
            | List [Value]
            | Quotation [Value]
-           | Procedure String [Value]
+           | Let String Value
+           | Define String [Value]
            deriving ( Show )
 
 instance Eq Value where
   (Word x)            == (Word y)              = x == y
+  (Apply x)           == (Apply y)             = x == y
   (Integer x)         == (Integer y)           = x == y
   (Float x)           == (Float y)             = x == y
   (String x)          == (String y)            = x == y
   (Boolean x)         == (Boolean y)           = x == y
   (List xs)           == (List ys)             = xs == ys
   (Quotation xs)      == (Quotation ys)        = xs == ys
-  (Procedure a xs)    == (Procedure b ys)    = xs == ys
+  (Let k1 v1)         == (Let k2 v2)           = k1 == k2 && v1 == v2
+  (Define k1 v1)      == (Define k2 v2)        = k1 == k2 && v1 == v2
 
 -- | -----------------------------------------------------------
 
-type Op    = String
-type Arity = Int
+type Op      = String
+
+type Arity   = Int
+
+type Program = [Value]
 
 -- | -----------------------------------------------------------
 
@@ -73,6 +79,10 @@ instance Show ProgramError where
 --
 data Instruction = TPush Value
                  | TPop
+                 -- Apply a word (every word represents some kind of fn application)
+                 | TApply Op
+                 | TDefine Op [Value]
+                 | TLet Op Value
                  | TDup
                  | TSwap
                  | TCons
@@ -80,7 +90,6 @@ data Instruction = TPush Value
                  | TChoice
                  | TStack
                  | TUnstack
-                 | TLet
                  -- Numeric operations
                  | TMult
                  | TAdd

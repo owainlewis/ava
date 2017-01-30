@@ -14,6 +14,7 @@
 module Language.Ava.Main where
 
 import qualified Data.Text              as T
+import qualified Data.Text.IO           as TIO
 import qualified Language.Ava.Parser    as Parser
 import qualified Language.Ava.Stack     as Stack
 import qualified Language.Ava.Eval      as Eval
@@ -40,13 +41,21 @@ transformProgram input =
                                   Right ops -> Right $ pops ++ ops)
                    (Right [])
                    p
-        Left e  -> Left $ AST.GenericError "Failed to parse program"
+        Left e  -> Left $ AST.GenericError (show e)
 
 pReduce1 = transformProgram . T.pack
+
+executeFile = do
+    contents <- TIO.readFile "language.ava"
+    case (Parser.parseMany contents) of
+        Left e -> putStrLn . show $ e
+        Right ops -> putStrLn . show $ ops
 
 run :: String -> IO (Either AST.ProgramError (Stack.Stack AST.Value))
 run p = let instructions = transformProgram (T.pack p) in
         case instructions of
             Left e -> return . Left $ e
-            Right ops -> execute Stack.empty ops
+            Right ops -> do
+              putStrLn . show $ ops
+              execute Stack.empty ops
 

@@ -67,8 +67,29 @@ parseQuotation = (\xs -> Quotation xs) <$> (Lexer.braces $ many parseExpr)
 parseWord :: Parser AST.Value
 parseWord = Word . T.unpack <$> Lexer.identifier
 
+-- define square =
+--   dup *
+--  ;
+parseDefine :: Parser AST.Value
+parseDefine = do
+  Lexer.reserved "define"
+  name <- Lexer.identifier
+  char '='
+  forms <- Lexer.braces $ spaces *> (many parseExpr) <* spaces
+  return $ AST.Define (T.unpack name) forms
+
+parseLet :: Parser AST.Value
+parseLet = do
+  Lexer.reserved "let"
+  name <- Lexer.identifier
+  char '='
+  expr <- parseExpr
+  return $ AST.Let (T.unpack name) expr
+
 parseExpr :: Parser AST.Value
 parseExpr = try parseNumber
+        <|> parseDefine
+        <|> parseLet
         <|> parseQuotation
         <|> parseString
         <|> parseList

@@ -1,4 +1,5 @@
-module Language.Ava.Simplify where
+module Language.Ava.Simplify
+  ( simplifyProcedure ) where
 
 -- The process of simplification here applies to procedures.
 --
@@ -19,6 +20,7 @@ module Language.Ava.Simplify where
 --
 -- bisquare = { TDup TMult TDup TMult }
 --
+simplifyProcedure procedure stack = error
 
 
 
