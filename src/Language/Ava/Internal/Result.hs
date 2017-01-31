@@ -4,7 +4,11 @@ module Language.Ava.Internal.Result
     , failure
     ) where
 
+-- | Result defines atype that can succeed or fail
+--   A more desrciptive Either
+--
 data Result e a = Failure e | Success a
+    deriving ( Eq, Ord, Show, Read )
 
 instance Functor (Result e) where
     fmap f (Success a) = Success (f a)
