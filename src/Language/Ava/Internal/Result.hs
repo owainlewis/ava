@@ -5,6 +5,7 @@ module Language.Ava.Internal.Result
     ) where
 
 import Control.Applicative(liftA2)
+import Data.Bifunctor
 
 -- | Result defines atype that can succeed or fail
 --   A more desrciptive Either
@@ -16,6 +17,9 @@ instance Functor (Result e) where
     fmap f (Success a) = Success (f a)
     fmap f (Failure e) = Failure e
 
+instance Bifunctor Result where
+    bimap f g = result (Failure . f) (Success . g)
+
 instance Applicative (Result e) where
     pure = Success
     Failure e <*> _ = Failure e
@@ -26,6 +30,14 @@ instance Monad (Result e) where
     return = Success
     Success m >>= k = k m
     Failure e  >>= _ = Failure e
+
+instance Foldable (Result a) where
+    foldMap _ (Failure _) = mempty
+    foldMap f (Success x) = f x
+
+result :: (a -> c) -> (b -> c) -> Result a b -> c
+result f g (Failure x) = (f x)
+result f g (Success x) = (g x)
 
 success :: t -> a -> Result e a
 success x = Success
