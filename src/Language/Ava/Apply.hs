@@ -20,25 +20,26 @@ import           Control.Monad.Except
 import           Language.Ava.Internal.Stack (Stack (..))
 
 import qualified Data.Map           as M
-import qualified Language.Ava.AST   as AST
+import qualified Language.Ava.Base.AST   as AST
+import Language.Ava.Intermediate.Instruction
 import qualified Language.Ava.Internal.Stack as Stack
 
 -- | -----------------------------------------------------------
 
 -- | Takes an instruction and turns it into a function that can be applied to a stack
 --
-applyOp :: AST.Instruction -> Stack AST.Value ->
-                              ExceptT AST.ProgramError IO (Stack AST.Value)
-applyOp (AST.TPush v) s     = push v s
-applyOp (AST.TPop) s        = pop s
-applyOp (AST.TDup) s        = dup s
-applyOp (AST.TSwap) s       = swap s
-applyOp (AST.TCons) s       = cons s
-applyOp (AST.TUncons) s     = uncons s
-applyOp (AST.TChoice) s     = choice s
-applyOp (AST.TApply w) s    = applyWord w s
-applyOp (AST.TLet k v) s    = letOp k v s
-applyOp (AST.TDefine k v) s = define k v s
+applyOp :: Instruction -> Stack AST.Value ->
+                          ExceptT AST.ProgramError IO (Stack AST.Value)
+applyOp (TPush v) s     = push v s
+applyOp (TPop) s        = pop s
+applyOp (TDup) s        = dup s
+applyOp (TSwap) s       = swap s
+applyOp (TCons) s       = cons s
+applyOp (TUncons) s     = uncons s
+applyOp (TChoice) s     = choice s
+applyOp (TApply w) s    = applyWord w s
+applyOp (TLet k v) s    = letOp k v s
+applyOp (TDefine k v) s = define k v s
 
 define :: Monad m => String -> [a] -> Stack a -> ExceptT e m (Stack a)
 define k v s = liftOp $ Stack.setProcedure k v s
@@ -74,11 +75,11 @@ applyWord w stack@(Stack s p v) =
                    Just g -> applyOp g stack
                    Nothing -> failOp (AST.GenericError $ "Unbound word " ++ w)
     where allWords =
-            M.fromList [ ("dup", AST.TDup)
-                       , ("cons", AST.TCons)
-                       , ("uncons", AST.TUncons)
-                       , ("pop", AST.TPop)
-                       , ("choice", AST.TChoice)
+            M.fromList [ ("dup", TDup)
+                       , ("cons", TCons)
+                       , ("uncons", TUncons)
+                       , ("pop", TPop)
+                       , ("choice", TChoice)
                        ]
 
 -- | -----------------------------------------------------------
