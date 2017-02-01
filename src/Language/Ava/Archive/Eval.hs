@@ -24,7 +24,7 @@ import qualified Language.Ava.Stack as S
 import qualified Data.Map as M
 
 liftO :: Applicative f => a -> f [a]
-liftO x = pure [ x ]
+liftO = pure . pure
 
 -- | A phase1 transform operation from some value to a sequence of base
 --   instructions
@@ -39,4 +39,5 @@ eval (List x)         = liftO (TPush (List x))
 eval (Quotation x)    = liftO (TPush (Quotation x))
 eval (Boolean b)      = liftO (TPush (Boolean b))
 eval (Word w)         = liftO (TApply w)
---eval (Let k v)        = liftO (TLet k v)
+eval (Let k v)        = liftO (TLet k v)
+eval (Define k vs)    = liftO (TDefine k vs)

@@ -4,7 +4,7 @@ module Language.Ava.Execution
     ) where
 
 import           Control.Monad.Except
-import           Language.Ava.Stack (Stack (..))
+import           Language.Ava.Internal.Stack (Stack (..))
 import           Language.Ava.Apply(applyOp)
 
 
@@ -12,7 +12,6 @@ import qualified Language.Ava.AST   as AST
 import qualified Language.Ava.Stack as Stack
 
 import           Language.Ava.AST(Instruction(..), ProgramError(..))
-
 
 -- | Execute a sequence of intructions in the context of a given stack
 --

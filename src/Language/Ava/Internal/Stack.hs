@@ -1,4 +1,4 @@
-module Language.Ava.Stack
+module Language.Ava.Internal.Stack
     ( Stack(..)
     , empty
     , with
@@ -46,16 +46,16 @@ getStack (Stack xs _ _) = xs
 
 -- | -----------------------------------------------------------
 
-getVar :: Stack a -> String -> Maybe a
-getVar (Stack _ _ vs) k = M.lookup k vs
+getVar :: String -> Stack a -> Maybe a
+getVar k (Stack _ _ vs) = M.lookup k vs
 
-setVar :: Stack a -> String -> a -> Stack a
-setVar (Stack s ps vs) k v = Stack s ps (M.insert k v vs)
+setVar :: String -> a -> Stack a -> Stack a
+setVar k v (Stack s ps vs) = Stack s ps (M.insert k v vs)
 
 -- | -----------------------------------------------------------
 
 getProcedure :: String -> Stack a -> Maybe [a]
 getProcedure k (Stack _ ps _) = M.lookup k ps
 
-setProcedure :: Stack a -> String -> [a] -> Stack a
-setProcedure (Stack s ps vs) k v = Stack s (M.insert k v ps) vs
+setProcedure :: String -> [a] -> Stack a -> Stack a
+setProcedure k v (Stack s ps vs) = Stack s (M.insert k v ps) vs

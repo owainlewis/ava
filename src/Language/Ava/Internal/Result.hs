@@ -4,6 +4,8 @@ module Language.Ava.Internal.Result
     , failure
     ) where
 
+import Control.Applicative(liftA2)
+
 -- | Result defines atype that can succeed or fail
 --   A more desrciptive Either
 --
@@ -30,4 +32,25 @@ success x = Success
 
 failure :: e -> Result e a
 failure = Failure
+
+bifmap :: (Functor f, Functor g) => (a -> b) -> g (f a) -> g (f b)
+bifmap f = fmap . fmap $ f
+
+data ResultIO e a = ResultIO {
+    runResultIO :: IO (Result e a)
+}
+
+instance Functor (ResultIO a) where
+    fmap f = ResultIO . (bifmap f) . runResultIO
+
+instance Applicative (ResultIO a) where
+    pure    = ResultIO . return . Success
+    f <*> x = ResultIO $ liftA2 (<*>) (runResultIO f) (runResultIO x)
+
+instance Monad (ResultIO a) where
+    return = pure
+    x >>= f = ResultIO $ runResultIO x >>= g
+                  where g = (\y -> case y of
+                                       Success a -> runResultIO $ f a
+                                       Failure  e -> return . Failure $ e)
 

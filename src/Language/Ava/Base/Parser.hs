@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- |
--- Module      : Language.Ava.Parser
+-- Module      : Language.Ava.Base.Parser
 -- Copyright   : (c) 2016 Owain Lewis
 --
 -- License     : BSD-style
@@ -9,38 +9,42 @@
 -- Portability : GHC
 --
 --
-module Language.Ava.Parser
+module Language.Ava.Base.Parser
     ( parseInteger
     , parseFloat
     , parseBoolean
     , parseString
     , parseList
     , parseWord
-    , parseIfStmt
-    , parseIfElseStmt
-    , parseLetStmt
-    , parseProcedure
     , parseQuotation
     , parseMany
     , readExpr
+    , AvaParseError
     ) where
 
 import           Text.Parsec
 import           Text.Parsec.Text   (Parser)
 
 import qualified Data.Text          as T
-import           Language.Ava.AST   as AST
-import qualified Language.Ava.Lexer as Lexer
+import           Language.Ava.Base.AST   as AST
+import qualified Language.Ava.Base.Lexer as Lexer
+
+type AvaParseError = String
 
 -------------------------------------------------------------
 
-readExpr :: Parser a -> T.Text -> Either ParseError a
-readExpr p = parse p "<stdin>"
+readExpr :: Parser a -> T.Text -> Either AvaParseError a
+readExpr p input = case (parse p "<stdin>" input) of
+                 Left e -> Left . show $ e
+                 Right p -> Right p
 
-parseMany :: T.Text -> Either ParseError [Value]
+parseMany :: T.Text -> Either AvaParseError [Value]
 parseMany = readExpr $ manyTill parseExpr eof
 
 -------------------------------------------------------------
+
+ignoreWhitespace :: Parser a -> Parser a
+ignoreWhitespace p = Lexer.whiteSpace *> p <* Lexer.whiteSpace
 
 parseInteger :: Parser AST.Value
 parseInteger = AST.Integer . fromIntegral <$> Lexer.integer
@@ -65,60 +69,38 @@ parseString = AST.String . T.unpack <$> Lexer.stringLiteral
 parseList :: Parser AST.Value
 parseList = List <$>  Lexer.brackets (Lexer.commaSep parseExpr)
 
--- if { 20 double 40 = }
---   "Hello, World!" print
--- end
-parseIfStmt :: Parser AST.Value
-parseIfStmt = do
-    Lexer.reserved "if"
-    cond <- Lexer.braces $ many parseExpr
-    pos <- manyTill parseExpr (string "end")
-    return $ IfStmt cond pos []
-
-parseIfElseStmt :: Parser AST.Value
-parseIfElseStmt = do
-    Lexer.reserved "if"
-    cond  <- Lexer.braces $ many parseExpr
-    ant   <- manyTill parseExpr (Lexer.reserved "else")
-    conse <- manyTill parseExpr (Lexer.reserved "end")
-    return $ IfStmt cond ant conse
-
 parseQuotation :: Parser AST.Value
 parseQuotation = (\xs -> Quotation xs) <$> (Lexer.braces $ many parseExpr)
-
-parseLetStmt :: Parser AST.Value
-parseLetStmt = do
-    Lexer.reserved "let"
-    ident <- Lexer.identifier
-    string "=" <* spaces
-    value <- parseExpr
-    return $ LetStmt (T.unpack ident) value
 
 parseWord :: Parser AST.Value
 parseWord = Word . T.unpack <$> Lexer.identifier
 
-parseProcedure :: Parser Value
-parseProcedure =
-  let docString = T.unpack <$> Lexer.stringLiteral in
-  do
-      try $ string "function" <* spaces
-      -- The definition name
-      p <- Lexer.identifier
-      -- An optional comment
-      optional $ Lexer.parens (many $ noneOf ")")
-      -- An optional documentation string
-      doc <- optionMaybe docString
-      -- A list of expressions forming the definition body
-      body <- Lexer.braces (many parseExpr)
-      return $ Procedure (T.unpack p) body doc
+-- | Parse a function definition
+--
+--   define square = {
+--     dup *
+--   }
+parseDefine :: Parser AST.Value
+parseDefine = do
+  Lexer.reserved "define"
+  name <- Lexer.identifier
+  ignoreWhitespace (char '=')
+  forms <- Lexer.braces (many parseExpr)
+  return $ AST.Define (T.unpack name) forms
+
+parseLet :: Parser AST.Value
+parseLet = do
+  Lexer.reserved "let"
+  name <- Lexer.identifier
+  ignoreWhitespace (char '=')
+  expr <- parseExpr
+  return $ AST.Let (T.unpack name) expr
 
 parseExpr :: Parser AST.Value
 parseExpr = try parseNumber
-        <|> parseProcedure
-        <|> parseLetStmt
+        <|> (try parseLet <|> parseDefine)
         <|> parseQuotation
         <|> parseString
         <|> parseList
         <|> parseBoolean
-        <|> (try parseIfElseStmt <|> parseIfStmt)
         <|> parseWord

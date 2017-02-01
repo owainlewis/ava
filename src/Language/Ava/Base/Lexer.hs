@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 -- |
--- Module      : Language.Ava.Lexer
+-- Module      : Language.Ava.Base.Lexer
 -- Copyright   : (c) 2016 Owain Lewis
 --
 -- License     : BSD-style
@@ -11,7 +11,7 @@
 --
 -- Lex utils
 --
-module Language.Ava.Lexer
+module Language.Ava.Base.Lexer
     ( lexer
     , identifier
     , reserved

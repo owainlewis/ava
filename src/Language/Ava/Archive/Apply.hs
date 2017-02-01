@@ -17,33 +17,34 @@ module Language.Ava.Apply
     where
 
 import           Control.Monad.Except
-import           Language.Ava.Stack (Stack (..))
+import           Language.Ava.Internal.Stack (Stack (..))
 
 import qualified Data.Map           as M
 import qualified Language.Ava.AST   as AST
-import qualified Language.Ava.Stack as Stack
+import qualified Language.Ava.Internal.Stack as Stack
 
 -- | -----------------------------------------------------------
 
 -- | Takes an instruction and turns it into a function that can be applied to a stack
 --
-applyOp :: AST.Instruction ->
-           Stack AST.Value ->
-           ExceptT AST.ProgramError IO (Stack AST.Value)
-applyOp (AST.TPush v) s = push v s
-applyOp AST.TPop s = pop s
-applyOp AST.TDup s = dup s
-applyOp AST.TSwap s = swap s
-applyOp AST.TCons s = cons s
-applyOp AST.TUncons s = uncons s
-applyOp AST.TChoice s = choice s
-applyOp (AST.TApply w) s = applyWord w s
-applyOp (AST.TLet k v) s = error "TODO"
+applyOp :: AST.Instruction -> Stack AST.Value ->
+                              ExceptT AST.ProgramError IO (Stack AST.Value)
+applyOp (AST.TPush v) s     = push v s
+applyOp (AST.TPop) s        = pop s
+applyOp (AST.TDup) s        = dup s
+applyOp (AST.TSwap) s       = swap s
+applyOp (AST.TCons) s       = cons s
+applyOp (AST.TUncons) s     = uncons s
+applyOp (AST.TChoice) s     = choice s
+applyOp (AST.TApply w) s    = applyWord w s
+applyOp (AST.TLet k v) s    = letOp k v s
 applyOp (AST.TDefine k v) s = define k v s
 
 define :: Monad m => String -> [a] -> Stack a -> ExceptT e m (Stack a)
-define k v stack@(Stack s procs vars) =
-  liftOp $ Stack.setProcedure stack k v
+define k v s = liftOp $ Stack.setProcedure k v s
+
+letOp :: Monad m => AST.Op -> a -> Stack a -> ExceptT e m (Stack a)
+letOp k v s = liftOp $ Stack.setVar k v s
 
 -- | Apply a word by resolving it's meaning from the current stack.
 --
@@ -54,6 +55,7 @@ define k v stack@(Stack s procs vars) =
 --   3. Look for a native word named w
 --   4. Word is unbound
 --
+
 applyWord :: String -> Stack AST.Value ->
              ExceptT AST.ProgramError IO (Stack AST.Value)
 applyWord w stack@(Stack s p v) =
@@ -65,7 +67,10 @@ applyWord w stack@(Stack s p v) =
         -- This might work? Just adding the values back onto the stack
         liftOp $ Stack (steps ++ s) p v
         failOp (AST.GenericError "TODO")
-      Nothing -> case (M.lookup w allWords) of
+      Nothing ->
+          case (Stack.getVar w stack) of
+              Just var -> liftOp $ Stack s p v
+              Nothing -> case (M.lookup w allWords) of
                    Just g -> applyOp g stack
                    Nothing -> failOp (AST.GenericError $ "Unbound word " ++ w)
     where allWords =

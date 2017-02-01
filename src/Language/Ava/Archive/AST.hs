@@ -15,6 +15,9 @@ module Language.Ava.AST
     ( Value(..)
     , Instruction(..)
     , ProgramError(..)
+    , Op
+    , Arity
+    , Program
     ) where
 
 import Data.Semigroup((<>))
