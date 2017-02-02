@@ -1,7 +1,5 @@
 DEFINE
 
-(* ===== Stack manipulation operators ===== *)
-
     newstack == [] unstack ;
     dup2     == dup [[dup] dip swap] dip ;
     rollup   == swap [swap] dip ; # [S | x y z] => [S | z x y]

@@ -7,9 +7,6 @@ module Language.Ava.Internal.Result
 import Control.Applicative(liftA2)
 import Data.Bifunctor
 
--- | Result defines atype that can succeed or fail
---   A more desrciptive Either
---
 data Result e a = Failure e | Success a
     deriving ( Eq, Ord, Show, Read )
 
@@ -47,6 +44,9 @@ failure = Failure
 
 bifmap :: (Functor f, Functor g) => (a -> b) -> g (f a) -> g (f b)
 bifmap f = fmap . fmap $ f
+
+fromEither :: Either e a -> Result e a
+fromEither = either Failure Success
 
 data ResultIO e a = ResultIO {
     runResultIO :: IO (Result e a)

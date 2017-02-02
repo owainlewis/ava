@@ -1,3 +1,13 @@
+-- |
+-- Module      : Language.Ava.Intermediate.Instruction
+--
+-- Copyright   : (c) 2016 Owain Lewis
+--
+-- License     : BSD-style
+-- Maintainer  : Owain Lewis <owain@owainlewis.com>
+-- Stability   : experimental
+-- Portability : GHC
+--
 module Language.Ava.Intermediate.Instruction where
 
 import Language.Ava.Base.AST(Value, Op)
@@ -38,4 +48,7 @@ data Instruction = TPush Value
                  | TGt
                  | TLt
                  | TEq
+                 -- IO
+                 | TDot
+                 | TPrint
                  deriving ( Eq, Show )
