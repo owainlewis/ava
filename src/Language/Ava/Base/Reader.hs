@@ -17,14 +17,13 @@ module Language.Ava.Base.Reader
     , readFile
     ) where
 
-import Prelude hiding (readFile)
+import           Prelude                  hiding (readFile)
 
-import Language.Ava.Base.Parser as P
+import           Language.Ava.Base.AST    (Value)
+import           Language.Ava.Base.Parser as P
 
-import Language.Ava.Base.AST(Value)
-
-import qualified Data.Text as T
-import qualified Data.Text.IO as TIO
+import qualified Data.Text                as T
+import qualified Data.Text.IO             as TIO
 
 type ParseOutcome = Either AvaParseError [Value]
 

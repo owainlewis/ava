@@ -8,17 +8,21 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
-module Language.Ava.Core where
+module Language.Ava.Core
+    ( execute
+    , execute1
+    ) where
 
-import           Language.Ava.Internal.Stack
+import           Control.Monad.Except                  (ExceptT, foldM,
+                                                        runExceptT)
+import qualified Data.Text                             as T
 import           Language.Ava.Base.AST
 import           Language.Ava.Intermediate.Instruction
-import qualified          Language.Ava.Intermediate.Reader as Reader
-import           Control.Monad.Except(ExceptT, runExceptT, foldM)
-import qualified Language.Ava.Internal.Stack as Stack
-import qualified Data.Text as T
+import qualified Language.Ava.Intermediate.Reader      as Reader
+import           Language.Ava.Internal.Stack
+import qualified Language.Ava.Internal.Stack           as Stack
 
-import Language.Ava.Apply(applyOp)
+import           Language.Ava.Apply                    (applyOp)
 
 -- | Execute a sequence of intructions in the context of a given stack
 --
@@ -36,12 +40,3 @@ go :: T.Text -> IO (Either ProgramError (Stack Value))
 go input = case Reader.readText input of
                Right instructions -> execute1 instructions
                Left parseErr -> return . Left $ GenericError (show parseErr)
-
--- Interactive top level evaluator
---
-interactive :: T.Text -> IO ()
-interactive input = do
-    result <- go input
-    case result of
-      Left e -> print e >> return ()
-      Right s -> return ()

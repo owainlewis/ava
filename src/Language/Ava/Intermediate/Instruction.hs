@@ -8,7 +8,9 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
-module Language.Ava.Intermediate.Instruction where
+module Language.Ava.Intermediate.Instruction
+    ( Instruction(..)
+    ) where
 
 import Language.Ava.Base.AST(Value, Op)
 
@@ -39,6 +41,7 @@ data Instruction = TPush Value
                  | TChoice
                  | TStack
                  | TUnstack
+                 | TInfra
                  -- Numeric operations
                  | TMult
                  | TAdd

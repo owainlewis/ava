@@ -25,6 +25,9 @@ module Language.Ava.Base.Parser
 import           Text.Parsec
 import           Text.Parsec.Text   (Parser)
 
+
+import Data.Bifunctor(bimap)
+
 import qualified Data.Text          as T
 import           Language.Ava.Base.AST   as AST
 import qualified Language.Ava.Base.Lexer as Lexer
@@ -34,17 +37,12 @@ type AvaParseError = String
 -------------------------------------------------------------
 
 readExpr :: Parser a -> T.Text -> Either AvaParseError a
-readExpr p input = case (parse p "<stdin>" input) of
-                 Left e -> Left . show $ e
-                 Right p -> Right p
+readExpr p input = bimap show id (parse p "<stdin>" input)
 
 parseMany :: T.Text -> Either AvaParseError [Value]
 parseMany = readExpr $ manyTill parseExpr eof
 
 -------------------------------------------------------------
-
-ignoreWhitespace :: Parser a -> Parser a
-ignoreWhitespace p = Lexer.whiteSpace *> p <* Lexer.whiteSpace
 
 parseInteger :: Parser AST.Value
 parseInteger = AST.Integer . fromIntegral <$> Lexer.integer
@@ -57,11 +55,11 @@ parseNumber = try parseFloat <|> parseInteger
 
 parseBoolean :: Parser AST.Value
 parseBoolean = parseTrue <|> parseFalse
-  where
-    parseTrue =
-      (Lexer.reserved "true") >> (return $ AST.Boolean True)
-    parseFalse =
-      (Lexer.reserved "false") >> (return $ AST.Boolean False)
+    where
+      parseTrue =
+          (Lexer.reserved "true") >> (return $ AST.Boolean True)
+      parseFalse =
+          (Lexer.reserved "false") >> (return $ AST.Boolean False)
 
 parseString :: Parser AST.Value
 parseString = AST.String . T.unpack <$> Lexer.stringLiteral
@@ -82,22 +80,32 @@ parseWord = Word . T.unpack <$> Lexer.identifier
 --   }
 parseDefine :: Parser AST.Value
 parseDefine = do
-  Lexer.reserved "define"
-  name <- Lexer.identifier
-  ignoreWhitespace (char '=')
-  forms <- Lexer.braces (many parseExpr)
-  return $ AST.Define (T.unpack name) forms
+    Lexer.reserved "define"
+    name <- Lexer.identifier
+    Lexer.lexeme (char '=')
+    forms <- Lexer.braces (many parseExpr)
+    return $ AST.Define (T.unpack name) forms
 
 parseLet :: Parser AST.Value
 parseLet = do
-  Lexer.reserved "let"
-  name <- Lexer.identifier
-  ignoreWhitespace (char '=')
-  expr <- parseExpr
-  return $ AST.Let (T.unpack name) expr
+    Lexer.reserved "let"
+    name <- Lexer.identifier
+    Lexer.lexeme (char '=')
+    expr <- parseExpr
+    return $ AST.Let (T.unpack name) expr
+
+parseComment :: Parser AST.Value
+parseComment =
+    let terminal = "*" in
+    do
+      string "(*"
+      comment <- manyTill (anyChar >> noneOf terminal) (string ")")
+      return $ AST.Comment comment
 
 parseExpr :: Parser AST.Value
-parseExpr = try parseNumber
+parseExpr =
+            (try parseComment)
+        <|> try parseNumber
         <|> (try parseLet <|> parseDefine)
         <|> parseQuotation
         <|> parseString

@@ -1,8 +1,0 @@
-let x = 10
-let y = 20
-
-function z { x y PLUS }
-
-if { z 30 EQ }
-  "..." PRINT
-end

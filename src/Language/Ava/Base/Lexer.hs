@@ -49,9 +49,7 @@ languageDef :: Token.GenLanguageDef T.Text st Identity
 languageDef =
     let identTokens = ":!#$%%&*+./<=>?@\\^|-~" in
     Lang.emptyDef {
-      Token.commentStart = "{-"
-    , Token.commentEnd = "-}"
-    , Token.commentLine = "--"
+      Token.commentStart = "//"
     , Token.opStart = oneOf identTokens
     , Token.opLetter = oneOf identTokens
     , Token.identStart = alphaNum <|> oneOf identTokens

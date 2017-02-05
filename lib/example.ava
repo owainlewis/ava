@@ -1,7 +1,0 @@
-function not () @doc "Returns the logical complement of a boolean value" {
-    false true choice
-}
-
-function != () @doc "Check if a value is not equal to X{
-    == not
-}

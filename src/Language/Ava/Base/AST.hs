@@ -43,6 +43,7 @@ data Value = Word String
            | Quotation [Value]
            | Let String Value
            | Define String [Value]
+           | Comment String
            deriving ( Show )
 
 instance Eq Value where
@@ -56,3 +57,4 @@ instance Eq Value where
   (Quotation xs)      == (Quotation ys)        = xs == ys
   (Let k1 v1)         == (Let k2 v2)           = k1 == k2 && v1 == v2
   (Define k1 v1)      == (Define k2 v2)        = k1 == k2 && v1 == v2
+  (Comment c1)        == (Comment c2)          = c1 == c2

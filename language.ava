@@ -1,9 +1,16 @@
-define foo = {
-  1 2 
-}
+define newstack = { {} unstack }
 
-let x = 10
+define swons    = { swap cons }
+define unswons  = { uncons swap }
 
-let y = 20
+define first    = { unswons pop }
+define rest     = { uncons pop }
 
-x y swap dup
+define dip      = { stack rest rest swap infra cons unstack }
+
+define not = { false true choice }
+
+true not print
+
+
+

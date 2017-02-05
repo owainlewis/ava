@@ -19,22 +19,21 @@ module Language.Ava.Apply
     where
 
 import           Control.Monad.Except
-import           Language.Ava.Internal.Stack (Stack (..))
+import qualified Data.Map                              as M
+import           Language.Ava.Base.AST
+import qualified Language.Ava.Base.AST                 as AST
+import           Language.Ava.Intermediate.Instruction
+import qualified Language.Ava.Intermediate.Reader      as Rdr
+import           Language.Ava.Internal.Stack           (Stack (..))
+import qualified Language.Ava.Internal.Stack           as Stack
 
-import qualified Data.Map           as M
-import qualified Language.Ava.Base.AST   as AST
-import Language.Ava.Intermediate.Instruction
-import qualified Language.Ava.Internal.Stack as Stack
+type Result = ExceptT AST.ProgramError IO (Stack AST.Value)
 
-import qualified Language.Ava.Intermediate.Reader as Rdr
-
-import Language.Ava.Base.AST
+type AvaFunction = Stack Value -> Result
 
 -- | Execute a sequence of intructions in the context of a given stack
 --
-execute :: Stack Value ->
-           [Instruction] ->
-           IO (Either ProgramError (Stack Value))
+execute :: Stack Value -> [Instruction] -> IO (Either ProgramError (Stack Value))
 execute s ops = runExceptT (foldM (\s f -> applyOp f $ s) s ops)
 
 -- | Takes a series of instructions and runs the on the empty stack
@@ -46,8 +45,7 @@ execute1 = execute Stack.empty
 
 -- | Takes an instruction and turns it into a function that can be applied to a stack
 --
-applyOp :: Instruction -> Stack AST.Value ->
-                          ExceptT AST.ProgramError IO (Stack AST.Value)
+applyOp :: Instruction -> Stack AST.Value -> Result
 applyOp (TPush v) s     = push v s
 applyOp (TPop) s        = pop s
 applyOp (TDup) s        = dup s
@@ -59,17 +57,21 @@ applyOp (TApply w) s    = applyWord w s
 applyOp (TLet k v) s    = letOp k v s
 applyOp (TDefine k v) s = define k v s
 
-applyOp (TStack) s = error "Not implemented"
-applyOp (TUnstack) s = error "Not implemented"
-applyOp (TMult) s = error "Not implemented"
-applyOp (TAdd) s = numericBinOp s (+)
-applyOp (TSub) s = error "Not implemented"
-applyOp (TDiv) s = error "Not implemented"
-applyOp (TGt) s = error "Not implemented"
-applyOp (TLt) s = error "Not implemented"
-applyOp (TEq) s = error "Not implemented"
-applyOp (TDot) s = error "Not implemented"
-applyOp (TPrint) s = error "Not implemented"
+applyOp (TStack) s      = error "Not implemented"
+applyOp (TUnstack) s    = unstack s
+applyOp (TInfra) s      = error "Not implemented"
+
+applyOp (TMult) s       = numericBinOp s (+)
+applyOp (TAdd) s        = numericBinOp s (+)
+applyOp (TSub) s        = numericBinOp s (-)
+applyOp (TDiv) s        = numericBinOp s (div)
+
+applyOp (TGt) s         = error "Not implemented"
+applyOp (TLt) s         = error "Not implemented"
+applyOp (TEq) s         = error "Not implemented"
+
+applyOp (TDot) s        = dot s
+applyOp (TPrint) s      = printS s
 
 -- | Bind a procedure in the current stack
 --
@@ -92,8 +94,7 @@ letOp k v s = liftOp $ Stack.setVar k v s
 --
 -- TODO this is a horrible mess. Also check for conflicts in naming !!
 --
-applyWord :: String -> Stack AST.Value ->
-             ExceptT AST.ProgramError IO (Stack AST.Value)
+applyWord :: String -> Stack AST.Value -> Result
 applyWord w stack@(Stack s p v) =
     -- Start with procedures.
     -- Apply a procedure is basically taking the values
@@ -149,7 +150,7 @@ push v = liftOp . Stack.modify (v:)
 --
 --   pop [x y] => [y]
 --
-pop :: Stack AST.Value -> ExceptT AST.ProgramError IO (Stack AST.Value)
+pop :: AvaFunction
 pop s = liftOp $ Stack.modify f s
         where f []     = []
               f (x:xs) = xs
@@ -158,7 +159,7 @@ pop s = liftOp $ Stack.modify f s
 --
 --   dup [x] => [x x]
 --
-dup :: Stack AST.Value -> ExceptT AST.ProgramError IO (Stack AST.Value)
+dup :: AvaFunction
 dup s = liftOp $ Stack.modify f s
         where f []     = []
               f (x:xs) = (x:x:xs)
@@ -167,7 +168,7 @@ dup s = liftOp $ Stack.modify f s
 --
 --   swap [x y] => [y x]
 --
-swap :: Stack AST.Value -> ExceptT AST.ProgramError IO (Stack AST.Value)
+swap :: AvaFunction
 swap s = liftOp $ Stack.modify f s
     where f (x:y:xs) = y:x:xs
           f x        = x
@@ -176,7 +177,7 @@ swap s = liftOp $ Stack.modify f s
 --
 --   cons x [] => [x y]
 --
-cons :: Stack AST.Value -> ExceptT AST.ProgramError IO (Stack AST.Value)
+cons :: AvaFunction
 cons s = ExceptT . return $ Stack.modifyM f s
     where f (x : AST.Quotation xs : ys) =
               return $ (AST.Quotation (x : xs)) : ys
@@ -188,7 +189,7 @@ cons s = ExceptT . return $ Stack.modifyM f s
 --
 --   uncons [x] => [x []]
 --
-uncons :: Stack AST.Value -> ExceptT AST.ProgramError IO (Stack AST.Value)
+uncons :: AvaFunction
 uncons s = ExceptT . return $ Stack.modifyM f s
     where f (AST.Quotation (x:xs) : ys) =
             return $ x : (AST.Quotation xs) : ys
@@ -198,24 +199,38 @@ uncons s = ExceptT . return $ Stack.modifyM f s
 
 -- | Choose between two options based on some boolean value
 --
-choice :: Stack AST.Value -> ExceptT AST.ProgramError IO (Stack AST.Value)
+choice :: AvaFunction
 choice s = ExceptT . return $ Stack.modifyM f s
-    where f ((AST.Boolean b) : y : n : xs)  =
+    where f ((AST.Boolean b) : n : y : xs)  =
             if b then return $ y : xs
                  else return $ n : xs
           f _ = Left . AST.InvalidState $ "choice"
 
 stack = "TODO"
-unstack = "TODO"
+
+unstack :: AvaFunction
+unstack s = ExceptT . return $ Stack.modifyM f s
+    where f ((AST.Quotation q) : xs) = return q
+          f _                        = Left . AST.InvalidState $ "unstack"
+
 infra = "TODO"
 
-
-numericBinOp
-  :: Monad m =>
-     Stack Value
-     -> (Int -> Int -> Int) -> ExceptT ProgramError m (Stack Value)
+numericBinOp :: Stack Value -> (Int -> Int -> Int) -> Result
 numericBinOp s op = ExceptT . return $ Stack.modifyM f s
     where f ((AST.Integer x) : (AST.Integer y) : xs) =
               return $ AST.Integer (x `op` y) : xs
           f _ = Left . AST.InvalidState $ "op"
+
+dot :: AvaFunction
+dot s@(Stack vs _ _)  = do
+    liftIO . putStrLn . show $ vs
+    liftOp s
+
+printS :: AvaFunction
+printS s@(Stack vs _ _) =
+    case vs of
+      [] -> liftOp s
+      (x:xs) -> do
+          liftIO . putStrLn . show $ x
+          liftOp s
 
