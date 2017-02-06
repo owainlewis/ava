@@ -10,7 +10,4 @@ define dip      = { stack rest rest swap infra cons unstack }
 
 define not = { false true choice }
 
-true not print
-
-
-
+[1] first

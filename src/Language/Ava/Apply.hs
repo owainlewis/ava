@@ -27,7 +27,9 @@ import qualified Language.Ava.Intermediate.Reader      as Rdr
 import           Language.Ava.Internal.Stack           (Stack (..))
 import qualified Language.Ava.Internal.Stack           as Stack
 
-type Result = ExceptT AST.ProgramError IO (Stack AST.Value)
+import Language.Ava.Base.Error(ProgramError(..), failGeneric, failState)
+
+type Result = ExceptT ProgramError IO (Stack AST.Value)
 
 type AvaFunction = Stack Value -> Result
 
@@ -66,9 +68,9 @@ applyOp (TAdd) s        = numericBinOp s (+)
 applyOp (TSub) s        = numericBinOp s (-)
 applyOp (TDiv) s        = numericBinOp s (div)
 
-applyOp (TGt) s         = error "Not implemented"
-applyOp (TLt) s         = error "Not implemented"
-applyOp (TEq) s         = error "Not implemented"
+applyOp (TGt) s         = boolBinOp s (>)
+applyOp (TLt) s         = boolBinOp s (<)
+applyOp (TEq) s         = boolBinOp s (==)
 
 applyOp (TDot) s        = dot s
 applyOp (TPrint) s      = printS s
@@ -107,7 +109,7 @@ applyWord w stack@(Stack s p v) =
               Just var -> applyOp (Rdr.eval var) stack
               Nothing -> case (M.lookup w allWords) of
                    Just native -> applyOp native stack
-                   Nothing -> failOp (AST.GenericError $ "Unbound word " ++ w)
+                   Nothing -> ExceptT . failGeneric $ "Unbound word " ++ w
     where allWords =
             M.fromList [ ("pop"    , TPop)
                        , ("swap"   , TSwap)
@@ -128,14 +130,8 @@ applyWord w stack@(Stack s p v) =
                        , ("print"  , TPrint)
                        ]
 
--- | -----------------------------------------------------------
-
--- | TODO I think these are already defined in mtl ? Being stupid
 liftOp :: Monad m => a -> ExceptT e m a
 liftOp = ExceptT . (return . Right)
-
-failOp :: Monad m => e -> ExceptT e m a
-failOp e = ExceptT . (return . Left) $ e
 
 -- | -----------------------------------------------------------
 
@@ -183,7 +179,7 @@ cons s = ExceptT . return $ Stack.modifyM f s
               return $ (AST.Quotation (x : xs)) : ys
           f (x : AST.List xs : ys) =
             return $ (AST.List (x : xs)) : ys
-          f _ = Left . AST.InvalidState $ "cons"
+          f _ = Left . InvalidState $ "cons"
 
 -- | This is the inverse of cons
 --
@@ -195,31 +191,39 @@ uncons s = ExceptT . return $ Stack.modifyM f s
             return $ x : (AST.Quotation xs) : ys
           f (AST.List (x:xs) : ys) =
             return $ x : (AST.List xs) : ys
-          f _ = Left . AST.InvalidState $ "uncons"
+          f _ = Left $ TypeError "?" "List or quotation"
 
 -- | Choose between two options based on some boolean value
 --
 choice :: AvaFunction
 choice s = ExceptT . return $ Stack.modifyM f s
-    where f ((AST.Boolean b) : n : y : xs)  =
+    where f (n : y : (AST.Boolean b) : xs)  =
             if b then return $ y : xs
                  else return $ n : xs
-          f _ = Left . AST.InvalidState $ "choice"
+          f _ = Left . InvalidState $ "choice"
 
+-- |
 stack = "TODO"
 
 unstack :: AvaFunction
 unstack s = ExceptT . return $ Stack.modifyM f s
     where f ((AST.Quotation q) : xs) = return q
-          f _                        = Left . AST.InvalidState $ "unstack"
+          f _ = Left . InvalidState $ "unstack"
 
+-- Takes a quotation, executes it and replaces the stack with it
 infra = "TODO"
 
 numericBinOp :: Stack Value -> (Int -> Int -> Int) -> Result
 numericBinOp s op = ExceptT . return $ Stack.modifyM f s
     where f ((AST.Integer x) : (AST.Integer y) : xs) =
               return $ AST.Integer (x `op` y) : xs
-          f _ = Left . AST.InvalidState $ "op"
+          f _ = Left . InvalidState $ "binary operation"
+
+boolBinOp :: Stack Value -> (Value -> Value -> Bool) -> Result
+boolBinOp s op = ExceptT . return $ Stack.modifyM f s
+    where f (x : y : xs) =
+            return $ AST.Boolean (x `op` y) : xs
+          f _ = Left . InvalidState $ "binary operation"
 
 dot :: AvaFunction
 dot s@(Stack vs _ _)  = do

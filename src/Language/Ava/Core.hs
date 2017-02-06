@@ -17,6 +17,7 @@ import           Control.Monad.Except                  (ExceptT, foldM,
                                                         runExceptT)
 import qualified Data.Text                             as T
 import           Language.Ava.Base.AST
+import           Language.Ava.Base.Error
 import           Language.Ava.Intermediate.Instruction
 import qualified Language.Ava.Intermediate.Reader      as Reader
 import           Language.Ava.Internal.Stack
@@ -29,7 +30,8 @@ import           Language.Ava.Apply                    (applyOp)
 execute :: Stack Value ->
            [Instruction] ->
            IO (Either ProgramError (Stack Value))
-execute s ops = runExceptT (foldM (\s f -> applyOp f $ s) s ops)
+execute s ops = runExceptT $ foldM step s ops
+    where step s f = applyOp f $ s
 
 -- | Takes a series of instructions and runs the on the empty stack
 --
