@@ -58,20 +58,16 @@ applyOp (TChoice) s     = choice s
 applyOp (TApply w) s    = applyWord w s
 applyOp (TLet k v) s    = letOp k v s
 applyOp (TDefine k v) s = define k v s
-
 applyOp (TStack) s      = error "Not implemented"
 applyOp (TUnstack) s    = unstack s
-applyOp (TInfra) s      = error "Not implemented"
-
-applyOp (TMult) s       = numericBinOp s (+)
+applyOp (TInfra) s      = infra s
+applyOp (TMult) s       = numericBinOp s (*)
 applyOp (TAdd) s        = numericBinOp s (+)
 applyOp (TSub) s        = numericBinOp s (-)
 applyOp (TDiv) s        = numericBinOp s (div)
-
 applyOp (TGt) s         = boolBinOp s (>)
 applyOp (TLt) s         = boolBinOp s (<)
 applyOp (TEq) s         = boolBinOp s (==)
-
 applyOp (TDot) s        = dot s
 applyOp (TPrint) s      = printS s
 
@@ -119,6 +115,7 @@ applyWord w stack@(Stack s p v) =
                        , ("choice" , TChoice)
                        , ("stack"  , TStack)
                        , ("unstack", TUnstack)
+                       , ("infra"  , TInfra)
                        , ("*"      , TMult)
                        , ("+"      , TAdd)
                        , ("-"      , TSub)
@@ -175,9 +172,9 @@ swap s = liftOp $ Stack.modify f s
 --
 cons :: AvaFunction
 cons s = ExceptT . return $ Stack.modifyM f s
-    where f (x : AST.Quotation xs : ys) =
+    where f (AST.Quotation xs : x : ys) =
               return $ (AST.Quotation (x : xs)) : ys
-          f (x : AST.List xs : ys) =
+          f (AST.List xs : x : ys) =
             return $ (AST.List (x : xs)) : ys
           f _ = Left . InvalidState $ "cons"
 
@@ -202,16 +199,21 @@ choice s = ExceptT . return $ Stack.modifyM f s
                  else return $ n : xs
           f _ = Left . InvalidState $ "choice"
 
--- |
 stack = "TODO"
+
+-- Takes a quotation, executes it and replaces the stack with it
+--
+infra :: AvaFunction
+infra stack@(Stack s p v) =
+    case s of
+      (AST.Quotation q) : xs ->
+          ExceptT $ execute (Stack xs p v) (map Rdr.eval q)
+      _ -> ExceptT . return . Left $ InvalidState "infra"
 
 unstack :: AvaFunction
 unstack s = ExceptT . return $ Stack.modifyM f s
     where f ((AST.Quotation q) : xs) = return q
           f _ = Left . InvalidState $ "unstack"
-
--- Takes a quotation, executes it and replaces the stack with it
-infra = "TODO"
 
 numericBinOp :: Stack Value -> (Int -> Int -> Int) -> Result
 numericBinOp s op = ExceptT . return $ Stack.modifyM f s

@@ -82,7 +82,6 @@ parseDefine :: Parser AST.Value
 parseDefine = do
     Lexer.reserved "define"
     name <- Lexer.identifier
-    Lexer.lexeme (char '=')
     forms <- Lexer.braces (many parseExpr)
     return $ AST.Define (T.unpack name) forms
 

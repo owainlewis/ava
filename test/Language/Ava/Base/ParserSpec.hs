@@ -1,18 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Language.Ava.ParserSpec ( spec ) where
+module Language.Ava.Base.ParserSpec ( spec ) where
 
-import qualified Language.Ava.Parser as Parser
+import qualified Language.Ava.Base.Parser as Parser
 
 import Test.Hspec
+import Data.Either(isRight)
 
 main :: IO ()
 main = hspec spec
 
---isSuccess :: Either a b
-isSuccess (Left _) = False
-isSuccess (Right _) = True
-
-shouldParse p i = isSuccess (Parser.readExpr p i) `shouldBe` True
+shouldParse p i = isRight (Parser.readExpr p i) `shouldBe` True
 
 spec :: Spec
 spec = do
@@ -31,10 +28,11 @@ spec = do
     it "should parse a list" $ do
       shouldParse Parser.parseList "[]"
       shouldParse Parser.parseList "[1,2,3]"
+      shouldParse Parser.parseList "[1, 2, 3]"
     it "should parse a quotation" $ do
       shouldParse Parser.parseQuotation "{}"
       shouldParse Parser.parseQuotation "{ 1 2 3 }"
     it "should parse a function definition" $ do
       shouldParse Parser.parseProcedure $ do
-        shouldParser Parser.parseProcedure "function foo { }"
-        shouldParser Parser.parseProcedure "function foo () { }"
+        shouldParser Parser.parseProcedure "define foo { bar }"
+        shouldParser Parser.parseProcedure "define bar { }"

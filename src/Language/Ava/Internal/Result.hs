@@ -65,4 +65,3 @@ instance Monad (ResultIO a) where
                   where g = (\y -> case y of
                                        Success a -> runResultIO $ f a
                                        Failure  e -> return . Failure $ e)
-
