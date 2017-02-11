@@ -30,8 +30,9 @@ import           Language.Ava.Apply                    (applyOp)
 execute :: Stack Value ->
            [Instruction] ->
            IO (Either ProgramError (Stack Value))
-execute s ops = runExceptT $ foldM step s ops
-    where step s f = applyOp f $ s
+execute s ops = let step s f = applyOp f $ s
+                in
+                  runExceptT $ foldM step s ops
 
 -- | Takes a series of instructions and runs the on the empty stack
 --
@@ -42,3 +43,5 @@ go :: T.Text -> IO (Either ProgramError (Stack Value))
 go input = case Reader.readText input of
                Right instructions -> execute1 instructions
                Left parseErr -> return . Left $ GenericError (show parseErr)
+
+gos = go . T.pack

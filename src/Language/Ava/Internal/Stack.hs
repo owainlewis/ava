@@ -15,11 +15,10 @@ import qualified Data.Map as M
 
 -- | -----------------------------------------------------------
 
-data Stack a = Stack {
-    stack      :: [a]
-  , procedures :: M.Map String [a]
-  , vars       :: M.Map String a
-} deriving ( Eq, Ord, Show )
+data Stack a = Stack { stack      :: [a]
+                     , procedures :: M.Map String [a]
+                     , vars       :: M.Map String a
+                     } deriving ( Eq, Ord, Show )
 
 -- | -----------------------------------------------------------
 

@@ -2,10 +2,14 @@ module Language.Ava.Internal.Result
     ( Result(..)
     , success
     , failure
+    , result
+    , fromEither
+    , liftSuccessIO
+    , liftFailureIO
     ) where
 
 import Control.Applicative(liftA2)
-import Data.Bifunctor
+import Data.Bifunctor(bimap, Bifunctor)
 
 data Result e a = Failure e | Success a
     deriving ( Eq, Ord, Show, Read )
@@ -43,7 +47,7 @@ failure :: e -> Result e a
 failure = Failure
 
 bifmap :: (Functor f, Functor g) => (a -> b) -> g (f a) -> g (f b)
-bifmap f = fmap . fmap $ f
+bifmap = fmap . fmap
 
 fromEither :: Either e a -> Result e a
 fromEither = either Failure Success
@@ -62,6 +66,12 @@ instance Applicative (ResultIO a) where
 instance Monad (ResultIO a) where
     return = pure
     x >>= f = ResultIO $ runResultIO x >>= g
-                  where g = (\y -> case y of
-                                       Success a -> runResultIO $ f a
-                                       Failure  e -> return . Failure $ e)
+        where g = (\y -> case y of
+                           Success a -> runResultIO $ f a
+                           Failure  e -> return . Failure $ e)
+
+liftSuccessIO :: a -> ResultIO e a
+liftSuccessIO = ResultIO . return . Success
+
+liftFailureIO :: e -> ResultIO e a
+liftFailureIO = ResultIO . return . Failure

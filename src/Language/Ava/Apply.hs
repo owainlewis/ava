@@ -8,7 +8,8 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
--- Modules here are used to apply some Instruction value to a stack and return a result.
+-- Modules here are used to apply some Instruction value to a
+-- stack and return a result.
 --
 -- These functions make up the core language def. Note that for now they are
 -- implemented inefficiently in Haskell but should be moved to LLVM or ASM generated
@@ -32,6 +33,14 @@ import Language.Ava.Base.Error(ProgramError(..), failGeneric, failState)
 type Result = ExceptT ProgramError IO (Stack AST.Value)
 
 type AvaFunction = Stack Value -> Result
+
+-- | Continue execution
+proceed :: Monad m => a -> ExceptT e m a
+proceed a = ExceptT . return . Right $ a
+
+-- | Terminate execution
+terminate :: Monad m => e -> ExceptT e m a
+terminate e = ExceptT . return . Left $ e
 
 -- | Execute a sequence of intructions in the context of a given stack
 --
@@ -195,20 +204,26 @@ uncons s = ExceptT . return $ Stack.modifyM f s
 choice :: AvaFunction
 choice s = ExceptT . return $ Stack.modifyM f s
     where f (n : y : (AST.Boolean b) : xs)  =
-            if b then return $ y : xs
-                 else return $ n : xs
+            return $ (if b then y else n) : xs
           f _ = Left . InvalidState $ "choice"
 
 stack = "TODO"
 
--- Takes a quotation, executes it and replaces the stack with it
+-- Infra combinator
+--
+-- L [M] [P] infra => L [N]
+--
+-- The infra combinator temporarily discards the current stack and takes M as the
+-- current stack state. It then executes the top quotation P which returns a new
+-- stack N. The new stack N is pushed back as a quotation onto the original stack
 --
 infra :: AvaFunction
-infra stack@(Stack s p v) =
+infra stack@(Stack s procs vars) =
     case s of
-      (AST.Quotation q) : xs ->
-          ExceptT $ execute (Stack xs p v) (map Rdr.eval q)
-      _ -> ExceptT . return . Left $ InvalidState "infra"
+      (AST.Quotation p) : (AST.Quotation m) : xs -> do
+          Stack ns np nv <- ExceptT $ execute (Stack m procs vars) (map Rdr.eval p)
+          proceed $ Stack (Quotation ns : xs) np nv
+      _ -> terminate $ InvalidState "infra"
 
 unstack :: AvaFunction
 unstack s = ExceptT . return $ Stack.modifyM f s

@@ -1,4 +1,8 @@
-define newstack { {} unstack }
+
+
+newstack :: [A] -> Int -> Set[A]
+newstack => { {} unstack }
+
 define swons    { swap cons }
 define unswons  { uncons swap }
 define first    { unswons pop }
