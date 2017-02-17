@@ -41,7 +41,9 @@ execute1 = execute Stack.empty
 
 go :: T.Text -> IO (Either ProgramError (Stack Value))
 go input = case Reader.readText input of
-               Right instructions -> execute1 instructions
+               Right instructions -> do
+                 print instructions
+                 execute1 instructions
                Left parseErr -> return . Left $ GenericError (show parseErr)
 
 gos = go . T.pack

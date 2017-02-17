@@ -201,15 +201,19 @@ uncons s = ExceptT . return $ Stack.modifyM f s
 
 -- | Choose between two options based on some boolean value
 --
+--   true  [P] [Q] branch => P.
+--
+--   false [P] [Q] branch => Q.
+--
 choice :: AvaFunction
 choice s = ExceptT . return $ Stack.modifyM f s
-    where f (n : y : (AST.Boolean b) : xs)  =
-            return $ (if b then y else n) : xs
+    where f (q : p : (AST.Boolean b) : xs)  =
+            return $ (if b then p else q) : xs
           f _ = Left . InvalidState $ "choice"
 
 stack = "TODO"
 
--- Infra combinator
+-- | Infra combinator
 --
 -- L [M] [P] infra => L [N]
 --
@@ -225,10 +229,15 @@ infra stack@(Stack s procs vars) =
           proceed $ Stack (Quotation ns : xs) np nv
       _ -> terminate $ InvalidState "infra"
 
+-- | Unstack
+--
+--
 unstack :: AvaFunction
 unstack s = ExceptT . return $ Stack.modifyM f s
     where f ((AST.Quotation q) : xs) = return q
           f _ = Left . InvalidState $ "unstack"
+
+----------------------------------------------------------------
 
 numericBinOp :: Stack Value -> (Int -> Int -> Int) -> Result
 numericBinOp s op = ExceptT . return $ Stack.modifyM f s
@@ -241,6 +250,9 @@ boolBinOp s op = ExceptT . return $ Stack.modifyM f s
     where f (x : y : xs) =
             return $ AST.Boolean (x `op` y) : xs
           f _ = Left . InvalidState $ "binary operation"
+
+-----------------------------------------------------------------
+-- IO operations
 
 dot :: AvaFunction
 dot s@(Stack vs _ _)  = do

@@ -17,7 +17,8 @@ module Language.Ava.Base.AST
     , Program
     ) where
 
-import Data.Semigroup((<>))
+import qualified Data.Semigroup as Semigroup
+import Data.List(intersperse)
 
 -------------------------------------------------------------
 
@@ -37,7 +38,18 @@ data Value = Word String
            | Let String Value
            | Define String [Value]
            | Comment String
-           deriving ( Ord, Show )
+           deriving ( Ord )
+
+listify :: Show a => [a] -> String
+listify = foldl1 (Semigroup.<>) . (intersperse ",") . map show
+
+instance Show Value where
+    show (Word s) = show s
+    show (Integer n) = show n
+    show (Float n) = show n
+    show (Boolean b) = show b
+    show (List xs) = "[" Semigroup.<> listify xs Semigroup.<> "]"
+    show (Quotation xs) = "{" Semigroup.<> listify xs Semigroup.<> "}"
 
 -------------------------------------------------------------
 
