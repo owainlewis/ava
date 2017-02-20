@@ -46,4 +46,5 @@ go input = case Reader.readText input of
                  execute1 instructions
                Left parseErr -> return . Left $ GenericError (show parseErr)
 
-gos = go . T.pack
+goStr :: String -> IO (Either ProgramError (Stack Value))
+goStr = go . T.pack

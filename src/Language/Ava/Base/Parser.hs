@@ -47,11 +47,18 @@ parseMany = readExpr $ manyTill parseExpr eof
 parseInteger :: Parser AST.Value
 parseInteger = AST.Integer . fromIntegral <$> Lexer.integer
 
+--parseInteger :: Parser AST.Value
+--parseInteger = do
+--  optional (oneOf "+-")
+--  digits <- many1 digit
+--  return $ AST.Integer (read digits :: Int)
+
+
 parseFloat :: Parser AST.Value
 parseFloat = AST.Float <$> Lexer.float
 
 parseNumber :: Parser AST.Value
-parseNumber = try parseFloat <|> parseInteger
+parseNumber = try parseFloat <|> try parseInteger
 
 parseBoolean :: Parser AST.Value
 parseBoolean = parseTrue <|> parseFalse
@@ -101,10 +108,11 @@ parseComment =
       comment <- manyTill (anyChar >> noneOf terminal) (string ")")
       return $ AST.Comment comment
 
+-- | Owain : => Do we need the try here?
 parseExpr :: Parser AST.Value
 parseExpr =
             (try parseComment)
-        <|> try parseNumber
+        <|> parseNumber
         <|> (try parseLet <|> parseDefine)
         <|> parseQuotation
         <|> parseString

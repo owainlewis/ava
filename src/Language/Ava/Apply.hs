@@ -34,6 +34,16 @@ type Result = ExceptT ProgramError IO (Stack AST.Value)
 
 type AvaFunction = Stack Value -> Result
 
+-- | Abstraction for commonly used pattens
+--
+liftModify :: Monad m => ([a] -> Either e [a]) -> Stack a -> ExceptT e m (Stack a)
+liftModify f s = ExceptT . return $ Stack.modifyM f s
+
+-- | Another abstraction for combining return with ExceptT
+--
+liftExcept :: Monad m => Either e a -> ExceptT e m a
+liftExcept = ExceptT . return
+
 -- | Continue execution
 proceed :: Monad m => a -> ExceptT e m a
 proceed a = ExceptT . return . Right $ a
@@ -67,7 +77,7 @@ applyOp (TChoice) s     = choice s
 applyOp (TApply w) s    = applyWord w s
 applyOp (TLet k v) s    = letOp k v s
 applyOp (TDefine k v) s = define k v s
-applyOp (TStack) s      = error "Not implemented"
+applyOp (TStack) s      = _stack s
 applyOp (TUnstack) s    = unstack s
 applyOp (TInfra) s      = infra s
 applyOp (TMult) s       = numericBinOp s (*)
@@ -180,7 +190,7 @@ swap s = liftOp $ Stack.modify f s
 --   cons x [] => [x y]
 --
 cons :: AvaFunction
-cons s = ExceptT . return $ Stack.modifyM f s
+cons s = liftModify f s
     where f (AST.Quotation xs : x : ys) =
               return $ (AST.Quotation (x : xs)) : ys
           f (AST.List xs : x : ys) =
@@ -192,7 +202,7 @@ cons s = ExceptT . return $ Stack.modifyM f s
 --   uncons [x] => [x []]
 --
 uncons :: AvaFunction
-uncons s = ExceptT . return $ Stack.modifyM f s
+uncons s = liftModify f s
     where f (AST.Quotation (x:xs) : ys) =
             return $ x : (AST.Quotation xs) : ys
           f (AST.List (x:xs) : ys) =
@@ -206,12 +216,10 @@ uncons s = ExceptT . return $ Stack.modifyM f s
 --   false [P] [Q] branch => Q.
 --
 choice :: AvaFunction
-choice s = ExceptT . return $ Stack.modifyM f s
+choice s = liftModify f s
     where f (q : p : (AST.Boolean b) : xs)  =
             return $ (if b then p else q) : xs
           f _ = Left . InvalidState $ "choice"
-
-stack = "TODO"
 
 -- | Infra combinator
 --
@@ -229,24 +237,30 @@ infra stack@(Stack s procs vars) =
           proceed $ Stack (Quotation ns : xs) np nv
       _ -> terminate $ InvalidState "infra"
 
+
+-- The stack can be pushed as a quotation onto the stack
+--
+_stack :: AvaFunction
+_stack s = liftExcept (Stack.modifyM (\xs -> return $ Quotation xs : xs) s)
+
 -- | Unstack
 --
 --
 unstack :: AvaFunction
-unstack s = ExceptT . return $ Stack.modifyM f s
+unstack s = liftExcept (Stack.modifyM f s)
     where f ((AST.Quotation q) : xs) = return q
           f _ = Left . InvalidState $ "unstack"
 
 ----------------------------------------------------------------
 
 numericBinOp :: Stack Value -> (Int -> Int -> Int) -> Result
-numericBinOp s op = ExceptT . return $ Stack.modifyM f s
+numericBinOp s op = liftModify f s
     where f ((AST.Integer x) : (AST.Integer y) : xs) =
               return $ AST.Integer (x `op` y) : xs
           f _ = Left . InvalidState $ "binary operation"
 
 boolBinOp :: Stack Value -> (Value -> Value -> Bool) -> Result
-boolBinOp s op = ExceptT . return $ Stack.modifyM f s
+boolBinOp s op = liftModify f s
     where f (x : y : xs) =
             return $ AST.Boolean (x `op` y) : xs
           f _ = Left . InvalidState $ "binary operation"
@@ -266,4 +280,3 @@ printS s@(Stack vs _ _) =
       (x:xs) -> do
           liftIO . putStrLn . show $ x
           liftOp s
-

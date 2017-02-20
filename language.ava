@@ -1,4 +1,4 @@
-define flush { {} unstack }
+define flush    { {} unstack }
 
 define swons    { swap cons }
 define unswons  { uncons swap }
@@ -13,6 +13,6 @@ define rollup   { swap [swap] dip }
 
 define inc      { 1 + }
 
-[1,2,3] print
+[1,2,3] print stack
 
 
