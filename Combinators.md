@@ -16,7 +16,7 @@ a b dupd => a a b
 
 The i combinator expects a quotation at the top of the stack.
 
-[P] i => P.
+{ P } i => P.
 
 ### X
 
@@ -41,5 +41,5 @@ n [P] times = P (n-1) [P] times
 
 ## Branch
 
-true  [P] [Q] branch => P.
-false [P] [Q] branch => Q.
+true  { P } { Q } branch => P.
+false { P } { Q } branch => Q.
