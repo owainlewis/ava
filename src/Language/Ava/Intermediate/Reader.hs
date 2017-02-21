@@ -47,6 +47,7 @@ eval (Boolean b)   = (TPush (Boolean b))
 eval (Word w)      = (TApply w)
 eval (Let k v)     = (TLet k v)
 eval (Define k vs) = (TDefine k vs)
+eval (Comment _)   = (TNoop)
 
 readText :: T.Text -> Outcome
 readText s = fmap (map eval) (Base.readText s)
@@ -61,4 +62,3 @@ readFile path = readText <$> TIO.readFile path
 --
 loadAva :: FilePath -> IO Outcome
 loadAva filePath = readText <$> TIO.readFile filePath
-

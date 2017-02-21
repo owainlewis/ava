@@ -1,10 +1,11 @@
-define flush    { {} unstack }
+(* Comment *)
 
+define flush    { {} unstack }
 define swons    { swap cons }
 define unswons  { uncons swap }
 define first    { unswons pop }
 define rest     { uncons pop }
-define i        { stack cdr swap infra unstack }
+define i        { stack rest swap infra unstack }
 define dip      { stack rest rest swap infra cons unstack }
 define not      { false true choice }
 define square   { dup * }
@@ -12,7 +13,5 @@ define quote    { {} cons }
 define rollup   { swap [swap] dip }
 
 define inc      { 1 + }
-
-[1,2,3] print stack
 
 

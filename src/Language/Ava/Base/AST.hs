@@ -41,7 +41,9 @@ data Value = Word String
            deriving ( Ord )
 
 listify :: Show a => [a] -> String
-listify = foldl1 (Semigroup.<>) . (intersperse ",") . map show
+listify xs = if null xs
+             then ""
+             else foldl1 (Semigroup.<>) . (intersperse ",") . map show $ xs
 
 instance Show Value where
     show (Word s) = show s
@@ -50,6 +52,7 @@ instance Show Value where
     show (Boolean b) = show b
     show (List xs) = "[" Semigroup.<> listify xs Semigroup.<> "]"
     show (Quotation xs) = "{" Semigroup.<> listify xs Semigroup.<> "}"
+    show (Comment _) = "Cmt"
 
 -------------------------------------------------------------
 

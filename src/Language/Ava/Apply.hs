@@ -80,15 +80,16 @@ applyOp (TDefine k v) s = define k v s
 applyOp (TStack) s      = _stack s
 applyOp (TUnstack) s    = unstack s
 applyOp (TInfra) s      = infra s
-applyOp (TMult) s       = numericBinOp s (*)
-applyOp (TAdd) s        = numericBinOp s (+)
-applyOp (TSub) s        = numericBinOp s (-)
-applyOp (TDiv) s        = numericBinOp s (div)
-applyOp (TGt) s         = boolBinOp s (>)
-applyOp (TLt) s         = boolBinOp s (<)
-applyOp (TEq) s         = boolBinOp s (==)
+applyOp (TMult) s       = numericBinOp s (*) "*"
+applyOp (TAdd) s        = numericBinOp s (+) "+"
+applyOp (TSub) s        = numericBinOp s (-) "-"
+applyOp (TDiv) s        = numericBinOp s (div) "/"
+applyOp (TGt) s         = boolBinOp s (>) ">"
+applyOp (TLt) s         = boolBinOp s (<) "<"
+applyOp (TEq) s         = boolBinOp s (==) "=="
 applyOp (TDot) s        = dot s
 applyOp (TPrint) s      = printS s
+applyOp (TNoop) s       = proceed s
 
 -- | Bind a procedure in the current stack
 --
@@ -245,7 +246,6 @@ _stack s = liftExcept (Stack.modifyM (\xs -> return $ Quotation xs : xs) s)
 
 -- | Unstack
 --
---
 unstack :: AvaFunction
 unstack s = liftExcept (Stack.modifyM f s)
     where f ((AST.Quotation q) : xs) = return q
@@ -253,17 +253,17 @@ unstack s = liftExcept (Stack.modifyM f s)
 
 ----------------------------------------------------------------
 
-numericBinOp :: Stack Value -> (Int -> Int -> Int) -> Result
-numericBinOp s op = liftModify f s
+numericBinOp :: Stack Value -> (Int -> Int -> Int) -> String -> Result
+numericBinOp s op opName = liftModify f s
     where f ((AST.Integer x) : (AST.Integer y) : xs) =
               return $ AST.Integer (x `op` y) : xs
-          f _ = Left . InvalidState $ "binary operation"
+          f _ = Left . InvalidState $ unwords ["binary operation", opName]
 
-boolBinOp :: Stack Value -> (Value -> Value -> Bool) -> Result
-boolBinOp s op = liftModify f s
+boolBinOp :: Stack Value -> (Value -> Value -> Bool) -> String -> Result
+boolBinOp s op opName = liftModify f s
     where f (x : y : xs) =
             return $ AST.Boolean (x `op` y) : xs
-          f _ = Left . InvalidState $ "binary operation"
+          f _ = Left . InvalidState $ unwords ["binar operation", opName]
 
 -----------------------------------------------------------------
 -- IO operations

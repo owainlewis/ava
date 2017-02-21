@@ -21,7 +21,7 @@ data ProgramError =
 -------------------------------------------------------------
 
 instance Show ProgramError where
-  show (InvalidState op) = "Invalid state for operation " <> op
+  show (InvalidState op) = unwords ["Invalid state", op]
   show (GenericError e)  = e
 
 -------------------------------------------------------------

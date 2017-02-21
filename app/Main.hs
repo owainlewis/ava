@@ -1,20 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Main where
+module Main
+    ( main ) where
 
 import qualified          Language.Ava.Intermediate.Reader as Reader
 import qualified          Language.Ava.Core as Core
 
-bipure :: (Applicative f, Applicative g) => a -> f (g a)
-bipure = pure . pure
+runFile :: FilePath -> IO ()
+runFile path = (either print runInstructions) =<< Reader.loadAva path
+    where runInstructions instrs = Core.execute1 instrs >>= print >> return ()
 
 main :: IO ()
-main = let debug = True in
-  do
-    ava <- Reader.loadAva "language.ava"
-    case (ava) of
-        Left e -> print e
-        Right ins -> Core.execute1 ins >>=
-          (if debug then print else bipure ()) >> return ()
+main = runFile "language.ava"
+
 
 
 

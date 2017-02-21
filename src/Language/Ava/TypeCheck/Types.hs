@@ -78,6 +78,5 @@ instance (Composeable Instruction) where
           in
           outputs tp1 == inputs tp2
 
-
 -- What we really what here is a fold step that opperates in the world of
 -- type patterns

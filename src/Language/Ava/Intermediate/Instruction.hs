@@ -51,4 +51,5 @@ data Instruction = TPush Value
                  | TEq
                  | TDot
                  | TPrint
+                 | TNoop
                  deriving ( Eq, Show )
