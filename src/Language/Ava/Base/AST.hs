@@ -12,12 +12,14 @@
 -- Defines the basic AST and core types for the Ava language
 --
 module Language.Ava.Base.AST
-    ( Value(..)
-    , Op
+    ( Op
     , Program
+    , Prim(..)
+    , Value(..)
     ) where
 
-import qualified Data.Semigroup as Semigroup
+import qualified Data.Monoid as Monoid
+
 import Data.List(intersperse)
 
 -------------------------------------------------------------
@@ -25,61 +27,45 @@ import Data.List(intersperse)
 type Op      = String
 type Program = [Value]
 
+listify xs = let f = foldl1 (Monoid.<>) . (intersperse ",") . map show in
+             if null xs then Monoid.mempty
+                        else f xs
+
+-------------------------------------------------------------
+-- Revised AST
 -------------------------------------------------------------
 
-data Value = Word String
-           | Apply String
-           | Integer Int
-           | Float Double
-           | String String
-           | Boolean Bool
-           | List [Value]
-           | Quotation [Value]
+data Prim = Word String
+         | Integer Integer
+         | Double Double
+         | String String
+         | Boolean Bool
+         | List [Prim]
+         | Quotation [Prim]
+         | Apply Op
+         deriving ( Eq )
+
+wrapped :: Show a => String -> [a] -> String -> String
+wrapped inner form outer = unwords [inner, listify form, outer]
+
+instance Show Prim where
+    show (Word x) = mconcat ["Word", show x]
+    show (Integer x) = show x
+    show (Double x) = show x
+    show (String x) = show x
+    show (Boolean x) = show x
+    show (Apply f) = mconcat ["Lambda", show f]
+    show (List xs) = wrapped "[" xs "]"
+    show (Quotation xs) = wrapped "{" xs "}"
+
+data Value = Prim Prim
            | Let String Value
            | Define String [Value]
            | Comment String
-           deriving ( Ord )
-
-listify :: Show a => [a] -> String
-listify xs = if null xs
-             then ""
-             else foldl1 (Semigroup.<>) . (intersperse ",") . map show $ xs
+           | Import String (Maybe String)
+           deriving ( Eq )
 
 instance Show Value where
-    show (Word s) = show s
-    show (Integer n) = show n
-    show (Float n) = show n
-    show (Boolean b) = show b
-    show (List xs) = "[" Semigroup.<> listify xs Semigroup.<> "]"
-    show (Quotation xs) = "{" Semigroup.<> listify xs Semigroup.<> "}"
-    show (Comment _) = "Cmt"
-
--------------------------------------------------------------
-
-instance Eq Value where
-  (Word x)            == (Word y)              = x == y
-  (Apply x)           == (Apply y)             = x == y
-  (Integer x)         == (Integer y)           = x == y
-  (Float x)           == (Float y)             = x == y
-  (String x)          == (String y)            = x == y
-  (Boolean x)         == (Boolean y)           = x == y
-  (List xs)           == (List ys)             = xs == ys
-  (Quotation xs)      == (Quotation ys)        = xs == ys
-  (Let k1 v1)         == (Let k2 v2)           = k1 == k2 && v1 == v2
-  (Define k1 v1)      == (Define k2 v2)        = k1 == k2 && v1 == v2
-  (Comment c1)        == (Comment c2)          = c1 == c2
-
--------------------------------------------------------------
-
-showType :: Value -> String
-showType (Word x) = "Word"
-showType (Apply x) = "Ap"
-showType (Integer x) = "Integer"
-showType (Float x) = "Float"
-showType (String x) = "String"
-showType (Boolean x) = "Boolean"
-showType (List xs) = "List"
-showType (Quotation xs) = "Quotation"
-showType (Let k1 v1) = "Let"
-showType (Define k1 v1) = "Define"
-showType (Comment c1) = "Comment"
+    show (Prim p) = show p
+    show (Let k v) = unwords ["Let", show k, "=", show v]
+    show (Define k vs) = unwords ["Define", k, "[", "]"]

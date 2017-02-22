@@ -38,16 +38,16 @@ type Outcome = Either AvaParseError [Instruction]
 --   A value that returns `Nothing` is a value that cannot be interpreted
 --
 eval :: Value -> Instruction
-eval (Integer x)   = (TPush (Integer x))
-eval (Float x)     = (TPush (Float x))
-eval (String x)    = (TPush (String x))
-eval (List x)      = (TPush (List x))
-eval (Quotation x) = (TPush (Quotation x))
-eval (Boolean b)   = (TPush (Boolean b))
-eval (Word w)      = (TApply w)
-eval (Let k v)     = (TLet k v)
-eval (Define k vs) = (TDefine k vs)
-eval (Comment _)   = (TNoop)
+eval (Prim (Integer x))   = (TPush (Prim (Integer x)))
+eval (Prim (Double x))    = (TPush (Prim (Double x)))
+eval (Prim (String x))    = (TPush (Prim (String x)))
+eval (Prim (List x))      = (TPush (Prim (List x)))
+eval (Prim (Quotation x)) = (TPush (Prim (Quotation x)))
+eval (Prim (Boolean b))   = (TPush (Prim (Boolean b)))
+eval (Prim (Word w))      = (TApply w)
+eval (Let k v)            = (TLet k v)
+eval (Define k vs)        = (TDefine k vs)
+eval (Comment _)          = (TNoop)
 
 readText :: T.Text -> Outcome
 readText s = fmap (map eval) (Base.readText s)

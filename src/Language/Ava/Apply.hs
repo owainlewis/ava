@@ -12,7 +12,7 @@
 -- stack and return a result.
 --
 -- These functions make up the core language def. Note that for now they are
--- implemented inefficiently in Haskell but should be moved to LLVM or ASM generated
+-- implemented inefficiently in Haskell but should be moved to LLVM generated
 -- code eventually
 --
 module Language.Ava.Apply
@@ -192,10 +192,10 @@ swap s = liftOp $ Stack.modify f s
 --
 cons :: AvaFunction
 cons s = liftModify f s
-    where f (AST.Quotation xs : x : ys) =
-              return $ (AST.Quotation (x : xs)) : ys
-          f (AST.List xs : x : ys) =
-            return $ (AST.List (x : xs)) : ys
+    where f (AST.Prim (AST.Quotation xs) : x : ys) =
+              return $ (AST.Prim (AST.Quotation (x:xs)) : ys)             
+          f (AST.Prim (AST.List xs : x : ys)) =
+              return $ (AST.List (x : xs)) : ys
           f _ = Left . InvalidState $ "cons"
 
 -- | This is the inverse of cons

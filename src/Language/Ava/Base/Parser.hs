@@ -11,7 +11,7 @@
 --
 module Language.Ava.Base.Parser
     ( parseInteger
-    , parseFloat
+    , parseDouble
     , parseBoolean
     , parseString
     , parseList
@@ -24,7 +24,6 @@ module Language.Ava.Base.Parser
 
 import           Text.Parsec
 import           Text.Parsec.Text   (Parser)
-
 
 import Data.Bifunctor(bimap)
 
@@ -39,52 +38,49 @@ type AvaParseError = String
 readExpr :: Parser a -> T.Text -> Either AvaParseError a
 readExpr p input = bimap show id (parse p "<stdin>" input)
 
-parseMany :: T.Text -> Either AvaParseError [Value]
+parseMany :: T.Text -> Either AvaParseError [AST.Value]
 parseMany = readExpr $ manyTill parseExpr eof
 
 -------------------------------------------------------------
 
-parseInteger :: Parser AST.Value
+parseInteger :: Parser AST.Prim
 parseInteger = AST.Integer . fromIntegral <$> Lexer.integer
 
---parseInteger :: Parser AST.Value
---parseInteger = do
---  optional (oneOf "+-")
---  digits <- many1 digit
---  return $ AST.Integer (read digits :: Int)
+parseDouble :: Parser AST.Prim
+parseDouble = AST.Double <$> Lexer.float
 
+parseNumber :: Parser AST.Prim
+parseNumber = try (parseDouble <|> parseInteger)
 
-parseFloat :: Parser AST.Value
-parseFloat = AST.Float <$> Lexer.float
-
-parseNumber :: Parser AST.Value
-parseNumber = try parseFloat <|> try parseInteger
-
-parseBoolean :: Parser AST.Value
+parseBoolean :: Parser AST.Prim
 parseBoolean = parseTrue <|> parseFalse
     where
-      parseTrue =
-          (Lexer.reserved "true") >> (return $ AST.Boolean True)
-      parseFalse =
-          (Lexer.reserved "false") >> (return $ AST.Boolean False)
+      parseTrue = (Lexer.reserved "true") >> (return . AST.Boolean $ True)
+      parseFalse = (Lexer.reserved "false") >> (return . AST.Boolean $ False)
 
-parseString :: Parser AST.Value
+parseString :: Parser AST.Prim
 parseString = AST.String . T.unpack <$> Lexer.stringLiteral
 
-parseList :: Parser AST.Value
-parseList = List <$>  Lexer.brackets (Lexer.commaSep parseExpr)
+parseList :: Parser AST.Prim
+parseList = AST.List <$> Lexer.brackets (Lexer.commaSep parsePrim)
 
-parseQuotation :: Parser AST.Value
-parseQuotation = (\xs -> Quotation xs) <$> (Lexer.braces $ many parseExpr)
+parseQuotation :: Parser AST.Prim
+parseQuotation = (\xs -> AST.Quotation $ xs) <$> (Lexer.braces $ many parsePrim)
 
-parseWord :: Parser AST.Value
-parseWord = Word . T.unpack <$> Lexer.identifier
+parseWord :: Parser AST.Prim
+parseWord = AST.Word . T.unpack <$> Lexer.identifier
 
--- | Parse a function definition
---
---   define square = {
---     dup *
---   }
+parsePrim :: Parser AST.Prim
+parsePrim = parseNumber <|>
+            parseQuotation <|>
+            parseList <|>
+            parseBoolean <|>
+            parseWord
+
+--------------------------------------------------
+-- Control flow
+--------------------------------------------------
+
 parseDefine :: Parser AST.Value
 parseDefine = do
     Lexer.reserved "define"
@@ -100,22 +96,5 @@ parseLet = do
     expr <- parseExpr
     return $ AST.Let (T.unpack name) expr
 
-parseComment :: Parser AST.Value
-parseComment =
-    let terminal = "*" in
-    do
-      string "(*"
-      comment <- manyTill (anyChar >> noneOf terminal) (string ")")
-      return $ AST.Comment comment
-
--- | Owain : => Do we need the try here?
 parseExpr :: Parser AST.Value
-parseExpr =
-            (try parseComment)
-        <|> parseNumber
-        <|> (try parseLet <|> parseDefine)
-        <|> parseQuotation
-        <|> parseString
-        <|> parseList
-        <|> parseBoolean
-        <|> parseWord
+parseExpr = (try parseLet <|> parseDefine) <|> (AST.Prim <$> parsePrim)
