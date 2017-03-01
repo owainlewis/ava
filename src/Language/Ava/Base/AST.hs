@@ -36,14 +36,14 @@ listify xs = let f = foldl1 (Monoid.<>) . (intersperse ",") . map show in
 -------------------------------------------------------------
 
 data Prim = Word String
-         | Integer Integer
-         | Double Double
-         | String String
-         | Boolean Bool
-         | List [Prim]
-         | Quotation [Prim]
-         | Apply Op
-         deriving ( Eq )
+          | Integer Integer
+          | Double Double
+          | String String
+          | Boolean Bool
+          | List [Value]
+          | Quotation [Value]
+          | Apply Op
+          deriving ( Eq, Ord )
 
 wrapped :: Show a => String -> [a] -> String -> String
 wrapped inner form outer = unwords [inner, listify form, outer]
@@ -63,7 +63,7 @@ data Value = Prim Prim
            | Define String [Value]
            | Comment String
            | Import String (Maybe String)
-           deriving ( Eq )
+           deriving ( Eq, Ord )
 
 instance Show Value where
     show (Prim p) = show p

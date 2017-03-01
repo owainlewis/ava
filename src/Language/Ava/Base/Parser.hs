@@ -62,10 +62,10 @@ parseString :: Parser AST.Prim
 parseString = AST.String . T.unpack <$> Lexer.stringLiteral
 
 parseList :: Parser AST.Prim
-parseList = AST.List <$> Lexer.brackets (Lexer.commaSep parsePrim)
+parseList = AST.List <$> Lexer.brackets (Lexer.commaSep parseExpr)
 
 parseQuotation :: Parser AST.Prim
-parseQuotation = (\xs -> AST.Quotation $ xs) <$> (Lexer.braces $ many parsePrim)
+parseQuotation = (\xs -> AST.Quotation $ xs) <$> (Lexer.braces $ many parseExpr)
 
 parseWord :: Parser AST.Prim
 parseWord = AST.Word . T.unpack <$> Lexer.identifier

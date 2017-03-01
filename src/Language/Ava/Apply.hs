@@ -34,6 +34,9 @@ type Result = ExceptT ProgramError IO (Stack AST.Value)
 
 type AvaFunction = Stack Value -> Result
 
+liftPrim :: Prim -> Value
+liftPrim x = Prim x
+
 -- | Abstraction for commonly used pattens
 --
 liftModify :: Monad m => ([a] -> Either e [a]) -> Stack a -> ExceptT e m (Stack a)
@@ -91,6 +94,9 @@ applyOp (TDot) s        = dot s
 applyOp (TPrint) s      = printS s
 applyOp (TNoop) s       = proceed s
 
+liftOp :: Monad m => a -> ExceptT e m a
+liftOp = ExceptT . (return . Right)
+
 -- | Bind a procedure in the current stack
 --
 define :: Monad m => String -> [a] -> Stack a -> ExceptT e m (Stack a)
@@ -147,9 +153,6 @@ applyWord w stack@(Stack s p v) =
                        , ("print"  , TPrint)
                        ]
 
-liftOp :: Monad m => a -> ExceptT e m a
-liftOp = ExceptT . (return . Right)
-
 -- | -----------------------------------------------------------
 
 -- | Push a value onto the stack
@@ -192,10 +195,10 @@ swap s = liftOp $ Stack.modify f s
 --
 cons :: AvaFunction
 cons s = liftModify f s
-    where f (AST.Prim (AST.Quotation xs) : x : ys) =
-              return $ (AST.Prim (AST.Quotation (x:xs)) : ys)             
-          f (AST.Prim (AST.List xs : x : ys)) =
-              return $ (AST.List (x : xs)) : ys
+    where f ((Prim (Quotation xs)) : x : ys) =
+            return $ ((liftPrim (Quotation (x:xs))):ys)
+          f (Prim (List xs) : x : ys) =
+            return $ ((liftPrim (List (x:xs))):ys)
           f _ = Left . InvalidState $ "cons"
 
 -- | This is the inverse of cons
@@ -204,10 +207,10 @@ cons s = liftModify f s
 --
 uncons :: AvaFunction
 uncons s = liftModify f s
-    where f (AST.Quotation (x:xs) : ys) =
-            return $ x : (AST.Quotation xs) : ys
-          f (AST.List (x:xs) : ys) =
-            return $ x : (AST.List xs) : ys
+    where f (Prim (AST.Quotation (x:xs)) : ys) =
+            return $ x : (liftPrim $ Quotation xs) : ys
+          f (Prim (AST.List (x:xs)) : ys) =
+            return $ x : (liftPrim $ List xs) : ys
           f _ = Left $ TypeError "?" "List or quotation"
 
 -- | Choose between two options based on some boolean value
@@ -218,7 +221,7 @@ uncons s = liftModify f s
 --
 choice :: AvaFunction
 choice s = liftModify f s
-    where f (q : p : (AST.Boolean b) : xs)  =
+    where f (q : p : (Prim (Boolean b)) : xs)  =
             return $ (if b then p else q) : xs
           f _ = Left . InvalidState $ "choice"
 
@@ -233,36 +236,35 @@ choice s = liftModify f s
 infra :: AvaFunction
 infra stack@(Stack s procs vars) =
     case s of
-      (AST.Quotation p) : (AST.Quotation m) : xs -> do
+      (Prim (Quotation p)) : (Prim (Quotation m)) : xs -> do
           Stack ns np nv <- ExceptT $ execute (Stack m procs vars) (map Rdr.eval p)
-          proceed $ Stack (Quotation ns : xs) np nv
+          proceed $ Stack (Prim (Quotation ns) : xs) np nv
       _ -> terminate $ InvalidState "infra"
-
 
 -- The stack can be pushed as a quotation onto the stack
 --
 _stack :: AvaFunction
-_stack s = liftExcept (Stack.modifyM (\xs -> return $ Quotation xs : xs) s)
+_stack s = liftExcept (Stack.modifyM (\xs -> return $ liftPrim (Quotation xs) : xs) s)
 
 -- | Unstack
 --
 unstack :: AvaFunction
 unstack s = liftExcept (Stack.modifyM f s)
-    where f ((AST.Quotation q) : xs) = return q
+    where f ((Prim (Quotation q)) : xs) = return q
           f _ = Left . InvalidState $ "unstack"
 
 ----------------------------------------------------------------
 
-numericBinOp :: Stack Value -> (Int -> Int -> Int) -> String -> Result
+numericBinOp :: Stack Value -> (Integer -> Integer -> Integer) -> String -> Result
 numericBinOp s op opName = liftModify f s
-    where f ((AST.Integer x) : (AST.Integer y) : xs) =
-              return $ AST.Integer (x `op` y) : xs
+    where f (Prim (Integer x) : (Prim (Integer y)) : xs) =
+              return $ liftPrim (Integer (x `op` y)) : xs
           f _ = Left . InvalidState $ unwords ["binary operation", opName]
 
 boolBinOp :: Stack Value -> (Value -> Value -> Bool) -> String -> Result
 boolBinOp s op opName = liftModify f s
     where f (x : y : xs) =
-            return $ AST.Boolean (x `op` y) : xs
+            return $ liftPrim (Boolean (x `op` y)) : xs
           f _ = Left . InvalidState $ unwords ["binar operation", opName]
 
 -----------------------------------------------------------------
