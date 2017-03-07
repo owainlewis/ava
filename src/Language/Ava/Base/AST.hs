@@ -27,6 +27,7 @@ import Data.List(intersperse)
 type Op      = String
 type Program = [Value]
 
+listify :: Show a => [a] -> String
 listify xs = let f = foldl1 (Monoid.<>) . (intersperse ",") . map show in
              if null xs then Monoid.mempty
                         else f xs

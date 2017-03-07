@@ -13,14 +13,23 @@ build-type:          Simple
 
 cabal-version:       >=1.10
 
+flag debug
+  Description: When enabled sets debug logging
+  Default:     True
+                      
 library
   hs-source-dirs:      src
-  exposed-modules:     Language.Ava.AST
-                     , Language.Ava.Eval
-                     , Language.Ava.Machine
-                     , Language.Ava.Lexer
-                     , Language.Ava.Parser
-                     , Language.Ava.Std.Base
+  exposed-modules:     Language.Ava.Base.AST
+                     , Language.Ava.Base.Error
+                     , Language.Ava.Base.Lexer
+                     , Language.Ava.Base.Parser
+                     , Language.Ava.Base.Reader
+                     , Language.Ava.Intermediate.Instruction
+                     , Language.Ava.Intermediate.Reader                       
+                     , Language.Ava.Internal.Result
+                     , Language.Ava.Internal.Stack
+                     , Language.Ava.Apply
+                     , Language.Ava.Core
   build-depends:       base >= 4.7 && < 5
                      , lens
                      , mtl

@@ -53,3 +53,28 @@ data Instruction = TPush Value
                  | TPrint
                  | TNoop
                  deriving ( Eq, Show )
+
+-- instance Show Instruction where
+--     show (TPush v) = "TPUSH[" ++ v ++ "]"
+--     show (TPop) = "TPop"
+--     show (TApply op) = "Apply[" ++ show op ++ "]"
+--     show (TDefine op vs) = "TDefine"
+--     show (TLet op v) = "TODO"
+--     show TDup = "TODO"
+--     show TSwap = "TODO"
+--     show TCons = "TODO"
+--     show TUncons = "TODO"
+--     show TChoice = "TODO"
+--     show TStack = "TODO"
+--     show TUnstack = "TODO"
+--     show TInfra = "TODO"
+--     show TMult = "TODO"
+--     show TAdd = "TODO"
+--     show TSub = "TODO"
+--     show TDiv = "TDiv"
+--     show TGt = "TGt"
+--     show TLt = "TLt"
+--     show TEq = "TEq"
+--     show TDot = "TDot"
+--     show TPrint = "TPrint"
+--     show TNoop = "TNoop"

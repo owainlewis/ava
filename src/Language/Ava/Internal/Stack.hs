@@ -28,7 +28,7 @@ empty = Stack [] M.empty M.empty
 with :: [a] -> Stack a
 with xs = Stack xs M.empty M.empty
 
--- | -----------------------------------------------------------
+-------------------------------------------------------------
 
 modify :: ([a] -> [a]) -> Stack a -> Stack a
 modify f (Stack s p v) = Stack (f s) p v
@@ -38,12 +38,12 @@ modifyM f (Stack s p v) = do
   state <- f s
   return (Stack state p v)
 
--- | -----------------------------------------------------------
+-------------------------------------------------------------
 
 getStack :: Stack a -> [a]
 getStack (Stack xs _ _) = xs
 
--- | -----------------------------------------------------------
+-------------------------------------------------------------
 
 getVar :: String -> Stack a -> Maybe a
 getVar k (Stack _ _ vs) = M.lookup k vs
@@ -51,7 +51,7 @@ getVar k (Stack _ _ vs) = M.lookup k vs
 setVar :: String -> a -> Stack a -> Stack a
 setVar k v (Stack s ps vs) = Stack s ps (M.insert k v vs)
 
--- | -----------------------------------------------------------
+-------------------------------------------------------------
 
 getProcedure :: String -> Stack a -> Maybe [a]
 getProcedure k (Stack _ ps _) = M.lookup k ps

@@ -4,37 +4,53 @@ module Language.Ava.Internal.Result
     , failure
     , result
     , fromEither
-    , liftSuccessIO
-    , liftFailureIO
     ) where
 
-import Control.Applicative(liftA2)
 import Data.Bifunctor(bimap, Bifunctor)
+
+-----------------------------------------------------------
 
 data Result e a = Failure e | Success a
     deriving ( Eq, Ord, Show, Read )
 
+-----------------------------------------------------------
+
 instance Functor (Result e) where
     fmap f (Success a) = Success (f a)
     fmap f (Failure e) = Failure e
+    {-# INLINE fmap #-}
+
+-----------------------------------------------------------
 
 instance Bifunctor Result where
     bimap f g = result (Failure . f) (Success . g)
+    {-# INLINE bimap #-}
+
+-----------------------------------------------------------
 
 instance Applicative (Result e) where
     pure = Success
+    {-# INLINE pure #-}
     Failure e <*> _ = Failure e
     Success _ <*> Failure e = Failure e
     Success f <*> Success x = Success (f x)
+    {-# INLINE (<*>) #-}
+
+-----------------------------------------------------------
 
 instance Monad (Result e) where
     return = Success
     Success m >>= k = k m
     Failure e  >>= _ = Failure e
+    {-# INLINE (>>=) #-}
+
+-----------------------------------------------------------
 
 instance Foldable (Result a) where
     foldMap _ (Failure _) = mempty
     foldMap f (Success x) = f x
+
+-----------------------------------------------------------
 
 result :: (a -> c) -> (b -> c) -> Result a b -> c
 result f g (Failure x) = (f x)
@@ -46,32 +62,5 @@ success x = Success
 failure :: e -> Result e a
 failure = Failure
 
-bifmap :: (Functor f, Functor g) => (a -> b) -> g (f a) -> g (f b)
-bifmap = fmap . fmap
-
 fromEither :: Either e a -> Result e a
 fromEither = either Failure Success
-
-data ResultIO e a = ResultIO {
-    runResultIO :: IO (Result e a)
-}
-
-instance Functor (ResultIO a) where
-    fmap f = ResultIO . (bifmap f) . runResultIO
-
-instance Applicative (ResultIO a) where
-    pure    = ResultIO . return . Success
-    f <*> x = ResultIO $ liftA2 (<*>) (runResultIO f) (runResultIO x)
-
-instance Monad (ResultIO a) where
-    return = pure
-    x >>= f = ResultIO $ runResultIO x >>= g
-        where g = (\y -> case y of
-                           Success a -> runResultIO $ f a
-                           Failure  e -> return . Failure $ e)
-
-liftSuccessIO :: a -> ResultIO e a
-liftSuccessIO = ResultIO . return . Success
-
-liftFailureIO :: e -> ResultIO e a
-liftFailureIO = ResultIO . return . Failure

@@ -50,13 +50,13 @@ parseDouble :: Parser AST.Prim
 parseDouble = AST.Double <$> Lexer.float
 
 parseNumber :: Parser AST.Prim
-parseNumber = try (parseDouble <|> parseInteger)
+parseNumber = try parseDouble <|> parseInteger
 
 parseBoolean :: Parser AST.Prim
 parseBoolean = parseTrue <|> parseFalse
     where
-      parseTrue = (Lexer.reserved "true") >> (return . AST.Boolean $ True)
-      parseFalse = (Lexer.reserved "false") >> (return . AST.Boolean $ False)
+      parseTrue = (Lexer.reserved "true") >> return (AST.Boolean True)
+      parseFalse = (Lexer.reserved "false") >> return (AST.Boolean False)
 
 parseString :: Parser AST.Prim
 parseString = AST.String . T.unpack <$> Lexer.stringLiteral
