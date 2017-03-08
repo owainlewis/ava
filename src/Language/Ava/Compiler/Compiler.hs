@@ -7,9 +7,3 @@ import qualified Language.Ava.Intermediate.Reader      as Reader
 data CompilerStage = LexStage
                    | ParseStage
                    | CodeGen
-
-
-
-
-
-
