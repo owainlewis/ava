@@ -1,24 +1,24 @@
 define flush    { {} unstack }
-
 define swons    { swap cons }
 define unswons  { uncons swap }
-
 define first    { unswons pop }
 define rest     { uncons pop }
-
 define not      { false true choice }
-
 define quote    { {} cons }
 define rollup   { swap [swap] dip }
-
 define i        { stack rest swap infra unstack }
 define dip      { stack rest rest swap infra cons unstack }
-
 define branch   { choice i }
 
-define inc { 1 + }
+define inc      { 1 + }
 
-10 20 30
+
+
+
+
+
+
+
 
 
 

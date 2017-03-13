@@ -11,7 +11,3 @@ runFile path = (either print runInstructions) =<< Reader.loadAva path
 
 main :: IO ()
 main = runFile "language.ava"
-
-
-
-

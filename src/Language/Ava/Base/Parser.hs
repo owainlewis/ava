@@ -44,7 +44,9 @@ parseMany = readExpr $ manyTill parseExpr eof
 -------------------------------------------------------------
 
 parseInteger :: Parser AST.Prim
-parseInteger = AST.Integer . fromIntegral <$> Lexer.integer
+parseInteger = do
+  digits <- Lexer.whiteSpace *> (many1 digit) <* Lexer.whiteSpace
+  return $ AST.Integer (read digits)
 
 parseDouble :: Parser AST.Prim
 parseDouble = AST.Double <$> Lexer.float

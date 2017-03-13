@@ -2,31 +2,25 @@
 
 A guide to the Ava combinators
 
-## Binary Operations
+## swap
 
 a b swap => b a
 
-a b popd => b
-
-a b dupd => a a b
-
-## Simple Combinators
-
-### I
+## i
 
 The i combinator expects a quotation at the top of the stack.
 
 { P } i => P.
 
-### X
+## x
 
 The x combinator
 
 [P] x => [P] P
 
-### B 
+## b
 
-### Infra
+## infra
 
 L [M] [P] infra => L [N]
 
@@ -34,12 +28,12 @@ The infra combinator temporarily discards the current stack and takes M as the
 current stack state. It then executes the top quotation P which returns a new
 stack N. The new stack N is pushed back as a quotation onto the original stack
 
-## Times
+## times
 
 0 [P] times = id.
 n [P] times = P (n-1) [P] times
 
-## Branch
+## branch
 
 true  { P } { Q } branch => P.
 false { P } { Q } branch => Q.
