@@ -23,8 +23,8 @@ import           Control.Monad.Except
 import qualified Data.Map                              as M
 import           Language.Ava.Base.AST
 import qualified Language.Ava.Base.AST                 as AST
-import           Language.Ava.Intermediate.Instruction
-import qualified Language.Ava.Intermediate.Reader      as Rdr
+import           Language.Ava.Instruction
+import qualified Language.Ava.Reader      as Rdr
 import           Language.Ava.Internal.Stack           (Stack (..))
 import qualified Language.Ava.Internal.Stack           as Stack
 

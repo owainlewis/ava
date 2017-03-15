@@ -8,7 +8,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
-module Language.Ava.Intermediate.Instruction
+module Language.Ava.Instruction
     ( Instruction(..)
     ) where
 

@@ -8,7 +8,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
-module Language.Ava.Intermediate.Reader
+module Language.Ava.Reader
     ( readText
     , readString
     , readFile
@@ -20,12 +20,11 @@ module Language.Ava.Intermediate.Reader
 import           Prelude                               hiding (readFile)
 
 import           Language.Ava.Base.Parser              (AvaParseError)
-import           Language.Ava.Intermediate.Instruction (Instruction)
 
 import qualified Language.Ava.Base.Reader              as Base
 
 import           Language.Ava.Base.AST
-import           Language.Ava.Intermediate.Instruction
+import           Language.Ava.Instruction
 
 import qualified Data.Text                             as T
 import qualified Data.Text.IO                          as TIO

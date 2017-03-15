@@ -24,12 +24,12 @@ library
                      , Language.Ava.Base.Lexer
                      , Language.Ava.Base.Parser
                      , Language.Ava.Base.Reader
-                     , Language.Ava.Intermediate.Instruction
-                     , Language.Ava.Intermediate.Reader                       
+                     , Language.Ava.Instruction
+                     , Language.Ava.Reader                       
                      , Language.Ava.Internal.Result
                      , Language.Ava.Internal.Stack
                      , Language.Ava.Apply
-                     , Language.Ava.Core
+                     , Language.Ava.Compiler
   build-depends:       base >= 4.7 && < 5
                      , lens
                      , mtl
