@@ -23,6 +23,12 @@ data ProgramError =
 instance Show ProgramError where
   show (InvalidState op) = unwords ["Invalid state", op]
   show (GenericError e)  = e
+  show (TypeError actual expected) =
+    unwords ["Type error. Expected"
+            , show actual
+            , "but got"
+            , show expected
+            ]
 
 -------------------------------------------------------------
 
