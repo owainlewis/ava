@@ -3,7 +3,7 @@ module Language.Ava.TypeCheck.Types
     , typePattern
     ) where
 
-import Language.Ava.Intermediate.Instruction
+import Language.Ava.Instruction
 import Language.Ava.Base.AST
 import Language.Ava.Internal.Stack(Stack)
 
@@ -14,7 +14,7 @@ data TypeKind = TAny
               | TBoolean
               | TSeq
               | TVoid
-              deriving ( Eq, Show )
+              deriving ( Eq, Ord, Show )
 
 data TypePattern = TypePattern {
     inputs  :: [TypeKind]
