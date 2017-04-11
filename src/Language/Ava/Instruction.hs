@@ -9,13 +9,12 @@
 -- Portability : GHC
 --
 module Language.Ava.Instruction
-    ( Instruction(..)
-    ) where
+  ( Instruction(..)
+  ) where
 
-import Language.Ava.Base.AST(Value, Op)
+import Language.Ava.Base.AST (Value, Op)
 
 -- | -----------------------------------------------------------
-
 -- These types form the basic low operations for the Ava language.
 --
 -- An instruction can be thought of as a function that takes a stack as
@@ -29,28 +28,30 @@ import Language.Ava.Base.AST(Value, Op)
 --
 -- Everything else gets re-written into this low level stack machine form
 --
-data Instruction = TPush Value
-                 | TPop
-                 | TApply Op
-                 | TDefine Op [Value]
-                 | TLet Op Value
-                 | TDup
-                 | TSwap
-                 | TCons
-                 | TUncons
-                 | TChoice
-                 | TStack
-                 | TUnstack
-                 | TInfra
-                 | TMult
-                 | TAdd
-                 | TSub
-                 | TDiv
-                 | TGt
-                 | TLt
-                 | TEq
-                 | TDot
-                 | TPrint
-                 | TNoop
-                 deriving ( Eq, Show )
-
+data Instruction
+  = TPush Value
+  | TPop
+  | TApply Op
+  | TDefine Op
+            [Value]
+  | TLet Op
+         Value
+  | TDup
+  | TSwap
+  | TCons
+  | TUncons
+  | TChoice
+  | TStack
+  | TUnstack
+  | TInfra
+  | TMult
+  | TAdd
+  | TSub
+  | TDiv
+  | TGt
+  | TLt
+  | TEq
+  | TDot
+  | TPrint
+  | TNoop
+  deriving (Eq, Show)

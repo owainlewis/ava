@@ -9,25 +9,25 @@
 -- Portability : GHC
 --
 module Language.Ava.Reader
-    ( readText
-    , readString
-    , readFile
-    , eval
-    , loadAva
-    , Outcome
-    ) where
+  ( readText
+  , readString
+  , readFile
+  , eval
+  , loadAva
+  , Outcome
+  ) where
 
-import           Prelude                               hiding (readFile)
+import Prelude hiding (readFile)
 
-import           Language.Ava.Base.Parser              (AvaParseError)
+import Language.Ava.Base.Parser (AvaParseError)
 
-import qualified Language.Ava.Base.Reader              as Base
+import qualified Language.Ava.Base.Reader as Base
 
-import           Language.Ava.Base.AST
-import           Language.Ava.Instruction
+import Language.Ava.Base.AST
+import Language.Ava.Instruction
 
-import qualified Data.Text                             as T
-import qualified Data.Text.IO                          as TIO
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 
 type Outcome = Either AvaParseError [Instruction]
 
@@ -37,16 +37,16 @@ type Outcome = Either AvaParseError [Instruction]
 --   A value that returns `Nothing` is a value that cannot be interpreted
 --
 eval :: Value -> Instruction
-eval (Prim (Integer x))   = (TPush (Prim (Integer x)))
-eval (Prim (Double x))    = (TPush (Prim (Double x)))
-eval (Prim (String x))    = (TPush (Prim (String x)))
-eval (Prim (List x))      = (TPush (Prim (List x)))
+eval (Prim (Integer x)) = (TPush (Prim (Integer x)))
+eval (Prim (Double x)) = (TPush (Prim (Double x)))
+eval (Prim (String x)) = (TPush (Prim (String x)))
+eval (Prim (List x)) = (TPush (Prim (List x)))
 eval (Prim (Quotation x)) = (TPush (Prim (Quotation x)))
-eval (Prim (Boolean b))   = (TPush (Prim (Boolean b)))
-eval (Prim (Word w))      = (TApply w)
-eval (Let k v)            = (TLet k v)
-eval (Define k vs)        = (TDefine k vs)
-eval (Comment _)          = (TNoop)
+eval (Prim (Boolean b)) = (TPush (Prim (Boolean b)))
+eval (Prim (Word w)) = (TApply w)
+eval (Let k v) = (TLet k v)
+eval (Define k vs) = (TDefine k vs)
+eval (Comment _) = (TNoop)
 
 readText :: T.Text -> Outcome
 readText s = fmap (map eval) (Base.readText s)

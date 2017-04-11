@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 -- |
 -- Module      : Language.Ava.Base.Lexer
 -- Copyright   : (c) 2016 Owain Lewis
@@ -12,31 +13,30 @@
 -- Lex utils
 --
 module Language.Ava.Base.Lexer
-    ( lexer
-    , identifier
-    , reserved
-    , operator
-    , parens
-    , brackets
-    , braces
-    , lexeme
-    , integer
-    , float
-    , stringLiteral
-    , commaSep
-    , whiteSpace
-    ) where
+  ( lexer
+  , identifier
+  , reserved
+  , operator
+  , parens
+  , brackets
+  , braces
+  , lexeme
+  , integer
+  , float
+  , stringLiteral
+  , commaSep
+  , whiteSpace
+  ) where
 
-import           Data.Functor.Identity (Identity)
-import           Text.Parsec
-import           Text.Parsec.Text
+import Data.Functor.Identity (Identity)
+import Text.Parsec
+import Text.Parsec.Text
 
-import qualified Data.Text             as T
-import qualified Text.Parsec.Language  as Lang
-import qualified Text.Parsec.Token     as Token
+import qualified Data.Text as T
+import qualified Text.Parsec.Language as Lang
+import qualified Text.Parsec.Token as Token
 
 -- |-----------------------------------------------------------------------
-
 lexer :: Token.GenTokenParser T.Text st Identity
 lexer = Token.makeTokenParser languageDef
 
@@ -44,23 +44,19 @@ readExpr :: Parser a -> T.Text -> Either ParseError a
 readExpr p = parse p "<stdin>"
 
 -- | -----------------------------------------------------------------------
-
 languageDef :: Token.GenLanguageDef T.Text st Identity
 languageDef =
-    let identTokens = ":!#$%%&*+./<=>?@\\^|-~" in
-    Lang.emptyDef {
-      Token.commentStart = "//"
-    , Token.opStart = oneOf identTokens
-    , Token.opLetter = oneOf identTokens
-    , Token.identStart = alphaNum <|> oneOf identTokens
-    , Token.identLetter = alphaNum
-    , Token.reservedNames = [ "true"
-                            , "false"
-                            , "let"
-                            ]
-    , Token.reservedOpNames = []
-    , Token.caseSensitive = True
-}
+  let identTokens = ":!#$%%&*+./<=>?@\\^|-~"
+  in Lang.emptyDef
+     { Token.commentStart = "//"
+     , Token.opStart = oneOf identTokens
+     , Token.opLetter = oneOf identTokens
+     , Token.identStart = alphaNum <|> oneOf identTokens
+     , Token.identLetter = alphaNum
+     , Token.reservedNames = ["true", "false", "let"]
+     , Token.reservedOpNames = []
+     , Token.caseSensitive = True
+     }
 
 identifier :: Parser T.Text
 identifier = T.pack <$> Token.identifier lexer
@@ -96,4 +92,4 @@ commaSep :: Parser a -> Parser [a]
 commaSep = Token.commaSep lexer
 
 whiteSpace :: Parser ()
-whiteSpace  = Token.whiteSpace lexer
+whiteSpace = Token.whiteSpace lexer

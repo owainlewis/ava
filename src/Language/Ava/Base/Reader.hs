@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 -- |
 -- Module      : Language.Ava.Base.Reader
 --
@@ -12,18 +13,18 @@
 -- Reads input strings and converts them into a concrete AST
 --
 module Language.Ava.Base.Reader
-    ( readText
-    , readString
-    , readFile
-    ) where
+  ( readText
+  , readString
+  , readFile
+  ) where
 
-import           Prelude                  hiding (readFile)
+import Prelude hiding (readFile)
 
-import           Language.Ava.Base.AST    (Value)
-import           Language.Ava.Base.Parser as P
+import Language.Ava.Base.AST (Value)
+import Language.Ava.Base.Parser as P
 
-import qualified Data.Text                as T
-import qualified Data.Text.IO             as TIO
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 
 type ParseOutcome = Either AvaParseError [Value]
 
