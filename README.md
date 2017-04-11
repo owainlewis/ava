@@ -6,7 +6,7 @@ It is a stack based programming language, heavily inspired by Joy.
 
 Ava programs are just a list of instructions. Ava supports the idea of quotations (meta programs) as a first class language construct. 
 
-Quotations are themselves Ava programs that can be evalulated. Unlike Joy, Ava quotations are distinct from lists
+Quotations are themselves Ava programs that can be evalulated. Unlike Joy, Ava quotations are distinct from lists.
 
 ## Example
 
@@ -25,9 +25,7 @@ A program may contain and generate other programs via quotations
 Ava functions are just a list of instructions bound to an identifier
 
 ```factor
-
 define square = [ dup * ]
-
 ```
 
 ### Variables
@@ -35,12 +33,11 @@ define square = [ dup * ]
 Variables are immutable
 
 ```factor
-
 let x = 10
 
 let y = 20
-
 ```
+
 # Language Reference
 
 A guide to the Ava combinators
@@ -90,4 +87,37 @@ n [P] times = P (n-1) [P] times
 ```
 true  { P } { Q } branch => P.
 false { P } { Q } branch => Q.
+```
+
+
+# Instructions 
+
+The AVA language is made up of two layers. The lowest layer is a sequence of instructions that manipulate or modify a stack.
+
+The lower level machine / VM instructions are
+
+```
+TPush
+TPop
+TDup
+TSwap
+TCons
+TUncons
+TChoice
+TApply
+TLet
+TDefine
+TStack
+TUnstack
+TInfra
+TMult
+TAdd
+TSub
+TDiv
+TGt
+TLt
+TEq
+TDot
+TPrint
+TNoop
 ```

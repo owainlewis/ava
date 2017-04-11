@@ -1,7 +1,4 @@
-define flush {
-  {} unstack
-}
-
+define flush    { {} unstack }
 define swons    { swap cons }
 define unswons  { uncons swap }
 define first    { unswons pop }
