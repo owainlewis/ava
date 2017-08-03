@@ -11,17 +11,3 @@ define dip      { stack rest rest swap infra cons unstack }
 define branch   { choice i }
 
 define inc      { 1 + }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
