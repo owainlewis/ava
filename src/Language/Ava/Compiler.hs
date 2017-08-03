@@ -41,16 +41,11 @@ execute :: Stack Value
         -> IO (Either ProgramError (Stack Value))
 execute ss ops = runExceptT $ foldM (\s f -> applyOp f s) ss ops
 
-----------------------------------------------------------------
--- Load the standard library
--- Runs a set of instructions over a stack that has the standard library preloaded
---
 executeWithStdLib :: [Instruction] -> IO (Either ProgramError (Stack Value))
 executeWithStdLib ops = do
   result <- go =<< TIO.readFile "lib/language.ava"
   either (return . Left) (flip execute ops) result
 
----------------------------------------------------------------
 goWithStack :: Stack Value -> T.Text -> IO (Either ProgramError (Stack Value))
 goWithStack stack input =
   either
