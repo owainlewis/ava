@@ -38,16 +38,14 @@ let x = 10
 let y = 20
 ```
 
-# Language Reference
+### Combinators
 
-A guide to the Ava combinators
-
-## swap
+#### swap
 ```
 a b swap => b a
 ```
 
-## i
+#### i
 
 The i combinator expects a quotation at the top of the stack.
 
@@ -55,7 +53,7 @@ The i combinator expects a quotation at the top of the stack.
 { P } i => P.
 ```
 
-## x
+#### x
 
 The x combinator
 
@@ -63,9 +61,9 @@ The x combinator
 [P] x => [P] P
 ```
 
-## b
+#### b
 
-## infra
+#### infra
 
 ```
 L [M] [P] infra => L [N]
@@ -75,20 +73,19 @@ The infra combinator temporarily discards the current stack and takes M as the
 current stack state. It then executes the top quotation P which returns a new
 stack N. The new stack N is pushed back as a quotation onto the original stack
 
-## times
+#### times
 
 ```
 0 [P] times = id.
 n [P] times = P (n-1) [P] times
 ```
 
-## branch
+#### branch
 
 ```
 true  { P } { Q } branch => P.
 false { P } { Q } branch => Q.
 ```
-
 
 # Instructions 
 
