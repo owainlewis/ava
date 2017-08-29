@@ -13,24 +13,18 @@ bifmap
   => (a -> b) -> g (f a) -> g (f b)
 bifmap = fmap . fmap
 
------------------------------------------------------------
-newtype ResultIO e a = ResultIO
-  { runResultIO :: IO (Result e a)
-  }
+newtype ResultIO e a = ResultIO { runResultIO :: IO (Result e a) }
 
------------------------------------------------------------
 instance Functor (ResultIO a) where
   fmap f = ResultIO . (bifmap f) . runResultIO
   {-# INLINE fmap #-}
 
------------------------------------------------------------
 instance Applicative (ResultIO a) where
   pure = ResultIO . return . Success
   {-# INLINE pure #-}
   f <*> x = ResultIO $ liftA2 (<*>) (runResultIO f) (runResultIO x)
   {-# INLINE <*> #-}
 
------------------------------------------------------------
 instance Monad (ResultIO a) where
   return = pure
   x >>= f = ResultIO $ runResultIO x >>= g
@@ -41,8 +35,7 @@ instance Monad (ResultIO a) where
              Success a -> runResultIO $ f a
              Failure e -> return . Failure $ e)
   {-# INLINE >>= #-}
-
------------------------------------------------------------
+  
 liftSuccessIO :: a -> ResultIO e a
 liftSuccessIO = ResultIO . return . Success
 
