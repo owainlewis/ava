@@ -284,7 +284,6 @@ unstack s = liftExcept (Stack.modifyM f s)
     f ((Prim (Quotation q)):xs) = return q
     f _ = Left . InvalidState $ "unstack"
 
-----------------------------------------------------------------
 numericBinOp :: Stack Value
              -> (Integer -> Integer -> Integer)
              -> String
@@ -301,8 +300,6 @@ boolBinOp s op opName = liftModify f s
     f (x:y:xs) = return $ liftPrim (Boolean (x `op` y)) : xs
     f _ = Left . InvalidState $ unwords ["binar operation", opName]
 
------------------------------------------------------------------
--- IO operations
 dot :: AvaFunction
 dot s@(Stack vs _ _) = do
   liftIO . putStrLn . show $ vs
