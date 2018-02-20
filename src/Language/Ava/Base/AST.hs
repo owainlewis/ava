@@ -20,12 +20,9 @@ module Language.Ava.Base.AST
   ) where
 
 import qualified Data.Monoid as Monoid
-
 import Data.List (intersperse)
 
--------------------------------------------------------------
 type Op = String
-
 type Program = [Value]
 
 listify
