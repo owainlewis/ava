@@ -34,9 +34,6 @@ listify xs =
        then Monoid.mempty
        else f xs
 
--------------------------------------------------------------
--- Revised AST
--------------------------------------------------------------
 data Prim
   = Word String
   | Integer Integer
